@@ -98,7 +98,7 @@ def analyze_personality(answers):
     return personality, description
 
 # ---------------------- GOOGLE SHEETS SETUP ----------------------
-SERVICE_ACCOUNT_FILE = 'deep-personality-quiz-api
+SERVICE_ACCOUNT_FILE = 'deep-personality-quiz-api"
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)

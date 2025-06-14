@@ -1,4 +1,4 @@
-iimport streamlit as st
+import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
 
@@ -90,7 +90,7 @@ def analyze_personality(answers):
 
     return personality, f"You are a {personality}! This means you're {', '.join(traits)} and have a unique perspective on the world."
 
-# ---------------------- CERTIFICATE IMAGE ROR ----------------------
+# ---------------------- CERTIFICATE IMAGE ----------------------
 def generate_certificate(name, personality):
     img = Image.new('RGB', (600, 300), color='white')
     d = ImageDraw.Draw(img)

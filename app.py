@@ -93,62 +93,86 @@ def analyze_personality(answers):
     description = f"You are a {personality}! This means you're {', '.join(traits)}."
     return personality, description
 
-# ---------------------- RESET FUNCTION ----------------------
-def reset_quiz():
-    st.session_state.answers = {}
-    st.session_state.username = ""
-    st.session_state.submitted = False
+# ---------------------- CERTIFICATE GENERATION ----------------------
+def generate_certificate(name, personality):
+    width, height = 600, 400
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
+
+    # Use default PIL font
+    title_font = ImageFont.load_default()
+    subtitle_font = ImageFont.load_default()
+
+    draw.text((width//2 - 100, 50), "Certificate of Personality", fill="black", font=title_font)
+    draw.text((width//2 - 100, 150), f"Presented to: {name}", fill="black", font=subtitle_font)
+    draw.text((width//2 - 100, 200), f"Personality Type: {personality}", fill="black", font=subtitle_font)
+
+    # Save to bytes buffer
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    byte_im = buf.getvalue()
+    return byte_im
 
 # ---------------------- MAIN APP ----------------------
+
 st.title("🧠 Deep Personality Quiz")
 
-# Username input with reset on submit
-username = st.text_input("Enter your name:", value=st.session_state.username)
-if username != st.session_state.username:
-    st.session_state.username = username
-    # Reset answers if username changes
-    reset_quiz()
+# Username input with session state preserved
+new_username = st.text_input("Enter your name:", value=st.session_state.username)
 
-# Show questions if username entered
+if new_username != st.session_state.username:
+    st.session_state.username = new_username
+    # Reset answers & submission but keep username
+    st.session_state.answers = {}
+    st.session_state.submitted = False
+
 if st.session_state.username:
-
-    # Questions rendering with stable radio buttons
+    # Show questions with radio buttons, preselect if already answered
     for q_num, q_text in questions.items():
         opts = options[q_num]
         option_labels = list(opts.values())
         option_keys = list(opts.keys())
 
         current_answer_key = st.session_state.answers.get(q_num, None)
+
         if current_answer_key and current_answer_key in option_keys:
             default_index = option_keys.index(current_answer_key)
+            selected_label = st.radio(
+                q_text,
+                option_labels,
+                index=default_index,
+                key=f"q{q_num}"
+            )
         else:
-            default_index = 0
-
-        selected_label = st.radio(
-            q_text,
-            option_labels,
-            index=default_index,
-            key=f"q{q_num}"
-        )
+            selected_label = st.radio(
+                q_text,
+                option_labels,
+                key=f"q{q_num}"
+            )
         selected_key = option_keys[option_labels.index(selected_label)]
         st.session_state.answers[q_num] = selected_key
 
-    # Submit button: only enabled if all questions answered
+    # Make sure all questions answered before submit enabled
     if len(st.session_state.answers) == len(questions):
         if st.button("Submit Quiz"):
             st.session_state.submitted = True
     else:
-        st.info("Please answer all questions to submit.")
+        st.info(f"Please answer all {len(questions)} questions to submit.")
 
-    # Reset button
     if st.button("Reset Quiz"):
-        reset_quiz()
+        st.session_state.answers = {}
+        st.session_state.submitted = False
+        st.session_state.username = ""
 
-    # Show results if submitted
+    # Show results and certificate download when submitted
     if st.session_state.submitted:
         personality, description = analyze_personality(st.session_state.answers)
         st.markdown(f"### Results for {st.session_state.username}")
         st.write(description)
+
+        cert_image = generate_certificate(st.session_state.username, personality)
+        st.image(cert_image)
+        st.download_button("Download Certificate", cert_image, file_name="certificate.png", mime="image/png")
 
 else:
     st.info("Please enter your name to start the quiz.")

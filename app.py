@@ -8,7 +8,7 @@ if "answers" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# Questions dictionary (you can add more questions as needed)
+# Questions dictionary
 questions = {
     "Q1": "What is your gender?",
     "Q2": "What is your age group?",
@@ -52,13 +52,10 @@ options = {
     "Q18": {"A": "Often", "B": "Sometimes", "C": "Rarely"},
 }
 
-# Personality types - simple example based on answers (you can customize logic)
+# Personality analysis function
 def analyze_personality(answers):
-    # Dummy example logic: count reds and blacks in final 6
     red_count = sum(1 for q in ["Q10","Q11","Q12","Q13","Q14","Q15"] if answers.get(q) == "R")
     black_count = 6 - red_count
-    
-    # Analyze gender as well for demo
     gender = answers.get("Q1", "Unknown")
 
     if red_count > black_count:
@@ -67,18 +64,52 @@ def analyze_personality(answers):
         personality = "You are calm and thoughtful."
     else:
         personality = "You have a balanced personality."
-    
+
     return f"Hello {st.session_state.username}! {personality} Your gender is recorded as: {gender}."
 
-# Main app
+# Certificate display
+def show_certificate():
+    st.markdown(f"""
+    <div style="border: 2px solid black; padding: 20px; margin-top: 20px; text-align: center;">
+        <h2>Certificate of Completion</h2>
+        <p>This certifies that <strong>{st.session_state.username}</strong> has completed the Deep Personality Quiz.</p>
+        <p><em>Thank you for participating!</em></p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Main app flow
 st.title("Deep Personality Quiz")
 
 if not st.session_state.submitted:
-    # Input username
     username = st.text_input("Please enter your name:", value=st.session_state.username, key="username")
-    
-    # Update username in session state if changed
-    if username and username != st.session_state.username:
+    if username.strip() != "":
         st.session_state.username = username
 
-    if usernam
+    if st.session_state.username != "":
+        st.write(f"Welcome, {st.session_state.username}! Please answer the following questions:")
+
+        # Display questions and radio buttons for answers
+        for qid, question in questions.items():
+            opts = options[qid]
+            # Use keys to avoid Streamlit warnings
+            choice = st.radio(question, list(opts.keys()), format_func=lambda x: opts[x], key=qid)
+            st.session_state.answers[qid] = choice
+
+        if st.button("Submit"):
+            # Make sure all questions answered
+            if len(st.session_state.answers) == len(questions):
+                st.session_state.submitted = True
+            else:
+                st.warning("Please answer all questions before submitting.")
+
+else:
+    # After submission - show personality analysis and certificate
+    result = analyze_personality(st.session_state.answers)
+    st.success("Quiz Completed!")
+    st.write(result)
+    show_certificate()
+    if st.button("Retake Quiz"):
+        # Reset session state
+        st.session_state.submitted = False
+        st.session_state.answers = {}
+        st.session_state.username = ""

@@ -1,3 +1,53 @@
+# ---------------------- CERTIFICATE ----------------------
+def generate_certificate(name, personality):
+    width, height = 800, 600
+    image = Image.new("RGB", (width, height), color=(30, 30, 30))
+    draw = ImageDraw.Draw(image)
+
+    try:
+        font_large = ImageFont.truetype("arial.ttf", 48)
+        font_small = ImageFont.truetype("arial.ttf", 28)
+    except:
+        font_large = ImageFont.load_default()
+        font_small = ImageFont.load_default()
+
+    draw.rectangle([(50, 50), (750, 550)], outline="gold", width=6)
+    draw.text((width//2 - 200, 100), "🎖️ Certificate of Personality", font=font_large, fill="white")
+    draw.text((width//2 - 180, 250), f"Awarded to:", font=font_small, fill="lightgray")
+    draw.text((width//2 - 150, 300), name, font=font_large, fill="cyan")
+    draw.text((width//2 - 250, 400), f"For being a true {personality}!", font=font_small, fill="gold")
+
+    byte_io = io.BytesIO()
+    image.save(byte_io, format="PNG")
+    byte_io.seek(0)
+    return byte_io
+
+# ---------------------- RESULTS ----------------------
+def show_results():
+    personality, description = analyze_personality(st.session_state.answers)
+
+    st.subheader("🎯 Your Personality Result")
+    st.success(description)
+
+    cert_image = generate_certificate(st.session_state.username, personality)
+    st.image(cert_image, caption="Your Certificate", use_column_width=True)
+    st.download_button("📥 Download Certificate", cert_image, file_name="personality_certificate.png")
+
+    if st.button("🔁 Retake Quiz"):
+        st.session_state.reset_requested = True
+        st.session_state.submitted = False
+        st.session_state.answers = {}
+        st.experimental_rerun()
+
+# ---------------------- MAIN ----------------------
+def main():
+    if st.session_state.submitted:
+        show_results()
+    else:
+        show_quiz()
+
+if __name__ == "__main__":
+    main()
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io

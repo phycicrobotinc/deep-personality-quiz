@@ -1,9 +1,8 @@
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
-pip install streamlit pillow
 
-# ----------- INIT SESSION STATE -----------
+# ------------- INIT STATE -----------------
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 if "answers" not in st.session_state:
@@ -11,7 +10,7 @@ if "answers" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# ----------- QUESTIONS & OPTIONS -----------
+# ------------- QUESTIONS -----------------
 questions = {
     "Q1": "What is your gender?",
     "Q2": "What is your age group?",
@@ -58,7 +57,7 @@ options = {
     "Q20": {"A": "Success", "B": "Happiness", "C": "Growth", "D": "Peace"}
 }
 
-# ----------- PERSONALITY ANALYSIS -----------
+# ------------- PERSONALITY ANALYSIS -------------
 def analyze_personality(answers):
     red_count = sum(1 for q in questions if q in answers and answers[q] == "R")
     black_count = sum(1 for q in questions if q in answers and answers[q] == "B")
@@ -89,27 +88,32 @@ def analyze_personality(answers):
     else:
         personality = "Observer"
 
-    return personality, f"You are a {personality}! This means you're {', '.join(traits)} and have a unique perspective on the world."
+    description = (
+        f"You are a {personality}! This means you're "
+        + ", ".join(traits)
+        + " and have a unique perspective on the world."
+    )
+    return personality, description
 
-# ----------- CERTIFICATE GENERATION -----------
+# ------------- CERTIFICATE GENERATION -------------
 def generate_certificate(name, personality):
-    img = Image.new('RGB', (600, 300), color='white')
-    draw = ImageDraw.Draw(img)
+    img = Image.new("RGB", (600, 300), color="white")
+    d = ImageDraw.Draw(img)
     try:
-        font = ImageFont.truetype("arial.ttf", 20)
+        font = ImageFont.truetype("arial.ttf", 24)
     except Exception:
         font = ImageFont.load_default()
 
-    draw.text((30, 50), "Certificate of Completion", fill="black", font=font)
-    draw.text((30, 120), f"Awarded to: {name}", fill="black", font=font)
-    draw.text((30, 160), f"Personality: {personality}", fill="black", font=font)
+    d.text((30, 50), "Certificate of Completion", fill="black", font=font)
+    d.text((30, 120), f"Awarded to: {name}", fill="black", font=font)
+    d.text((30, 170), f"Personality: {personality}", fill="black", font=font)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    buf.seek(0)  # Reset pointer before returning
+    buf.seek(0)
     return buf
 
-# ----------- USER INTERFACE -----------
+# ------------- UI -------------
 st.title("🧠 Deep Personality Quiz")
 
 if not st.session_state.submitted:
@@ -117,37 +121,51 @@ if not st.session_state.submitted:
     if username:
         st.session_state.username = username
 
-        # Initialize answers keys with None if missing
+        # Initialize unanswered questions
         for key in questions:
             if key not in st.session_state.answers:
                 st.session_state.answers[key] = None
 
-        # Show all questions with radio options
+        # Show questions with radio buttons for answers
         for key in questions:
-            answer_text = st.radio(
-                questions[key],
-                options[key].values(),
-                index=-1,
-                key=key
-            )
-            # Find key code (A, B, R...) for selected answer text
+            selected_option = st.session_state.answers.get(key)
+
+            # Get list of option texts
+            option_texts = list(options[key].values())
+
+            # Figure out index of selected option or -1 if None
+            if selected_option:
+                # Find the option key (e.g. "A") to get text
+                current_text = options[key].get(selected_option)
+                index = option_texts.index(current_text) if current_text in option_texts else 0
+            else:
+                index = 0  # default to first option to avoid -1 errors
+
+            answer = st.radio(questions[key], option_texts, index=index, key=key)
+
+            # Update session state answer key with option code ("A", "B", "R", etc)
             for code, text in options[key].items():
-                if text == answer_text:
+                if text == answer:
                     st.session_state.answers[key] = code
+                    break
 
         if st.button("Submit"):
-            # Validate all questions answered (no None values)
-            if all(ans is not None for ans in st.session_state.answers.values()):
-                st.session_state.submitted = True
-            else:
+            # Check all questions answered (no None)
+            if None in st.session_state.answers.values():
                 st.warning("Please answer all questions.")
+            else:
+                st.session_state.submitted = True
+
 else:
     st.success(f"Thanks for completing the quiz, {st.session_state.username}!")
+
     personality, description = analyze_personality(st.session_state.answers)
+
     st.markdown(f"### Your Personality Type: {personality}")
     st.write(description)
 
     st.markdown("---")
     st.markdown("### Certificate of Completion")
-    cert_buf = generate_certificate(st.session_state.username, personality)
-    st.image(cert_buf, caption="Right-click to save your certificate.")
+    certificate_img = generate_certificate(st.session_state.username, personality)
+    st.image(certificate_img, caption="Right-click or tap and hold to save your certificate.")
+

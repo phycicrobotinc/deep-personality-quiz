@@ -1,11 +1,3 @@
-
-import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
-import io
-import gspread
-from google.oauth2.service_account import Credentials
-from datetime import datetime
-
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
@@ -105,12 +97,12 @@ def analyze_personality(answers):
     return personality, description
 
 # ---------------------- GOOGLE SHEETS SETUP ----------------------
-SERVICE_ACCOUNT_FILE = "deep-personality-quiz-api.json"
+SERVICE_ACCOUNT_FILE = 'deep-personality-quiz-api.json'
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 gc = gspread.authorize(creds)
-sheet = gc.open("phycic robot 1").sheet1
+sheet = gc.open("phycic robot 1").sheet1  # your Google Sheet name here
 
 def log_quiz_results(username, answers):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

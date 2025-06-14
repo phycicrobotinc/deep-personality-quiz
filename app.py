@@ -93,109 +93,76 @@ def analyze_personality(answers):
     description = f"You are a {personality}! This means you're {', '.join(traits)}."
     return personality, description
 
-# ---------------------- CERTIFICATE GENERATION ----------------------
+# ---------------------- GENERATE CERTIFICATE ----------------------
 def generate_certificate(name, personality):
-    width, height = 700, 450
+    width, height = 800, 400
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
 
-    # Fonts - try to load nicer fonts or fallback to default
+    # Load a font
     try:
-        title_font = ImageFont.truetype("arial.ttf", 40)
-        subtitle_font = ImageFont.truetype("arial.ttf", 28)
-        small_font = ImageFont.truetype("arial.ttf", 18)
+        font_title = ImageFont.truetype("arial.ttf", 40)
+        font_subtitle = ImageFont.truetype("arial.ttf", 24)
     except IOError:
-        title_font = ImageFont.load_default()
-        subtitle_font = ImageFont.load_default()
-        small_font = ImageFont.load_default()
+        font_title = ImageFont.load_default()
+        font_subtitle = ImageFont.load_default()
 
-    # Draw border
-    border_color = (30, 144, 255)  # DodgerBlue
-    border_width = 8
-    draw.rectangle([border_width//2, border_width//2, width - border_width//2, height - border_width//2], outline=border_color, width=border_width)
+    # Draw title and subtitle
+    draw.text((width // 2, 50), "Certificate of Personality", fill="navy", font=font_title, anchor="mm")
+    draw.text((width // 2, 120), f"Presented to {name}", fill="black", font=font_subtitle, anchor="mm")
+    draw.text((width // 2, 180), f"For your personality type:", fill="black", font=font_subtitle, anchor="mm")
+    draw.text((width // 2, 240), f"{personality}", fill="darkgreen", font=font_title, anchor="mm")
 
-    # Title
-    title_text = "Certificate of Personality"
-    w, h = draw.textsize(title_text, font=title_font)
-    draw.text(((width - w) / 2, 50), title_text, fill=border_color, font=title_font)
+    # Add some decoration lines
+    draw.line([(50, 350), (width - 50, 350)], fill="navy", width=3)
+    draw.line([(50, 355), (width - 50, 355)], fill="gold", width=3)
 
-    # Presented to
-    presented_text = f"Presented to:"
-    w, h = draw.textsize(presented_text, font=subtitle_font)
-    draw.text(((width - w) / 2, 130), presented_text, fill="black", font=subtitle_font)
+    # Save to bytes
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+    return img_byte_arr
 
-    # Name (larger)
-    w, h = draw.textsize(name, font=subtitle_font)
-    draw.text(((width - w) / 2, 170), name, fill=(70, 70, 70), font=subtitle_font)
-
-    # Personality type
-    personality_text = f"Personality Type: {personality}"
-    w, h = draw.textsize(personality_text, font=small_font)
-    draw.text(((width - w) / 2, 250), personality_text, fill="black", font=small_font)
-
-    # Footer
-    footer_text = "Thank you for taking the Deep Personality Quiz!"
-    w, h = draw.textsize(footer_text, font=small_font)
-    draw.text(((width - w) / 2, height - 50), footer_text, fill=(100, 100, 100), font=small_font)
-
-    # Save to bytes buffer
-    buf = io.BytesIO()
-    image.save(buf, format="PNG")
-    byte_im = buf.getvalue()
-    return byte_im
-
-# ---------------------- MAIN APP ----------------------
-
+# ---------------------- STREAMLIT APP ----------------------
 st.title("🧠 Deep Personality Quiz")
 
-# Username input with session state preserved
-new_username = st.text_input("Enter your name:", value=st.session_state.username)
-
-if new_username != st.session_state.username:
-    st.session_state.username = new_username
-    # Reset answers & submission but keep username
-    st.session_state.answers = {}
-    st.session_state.submitted = False
+if not st.session_state.username or st.session_state.reset_requested:
+    st.session_state.username = st.text_input("Enter your name to start:", value="")
+    st.session_state.reset_requested = False
+    if st.session_state.username:
+        st.success(f"Welcome, {st.session_state.username}! You can start the quiz now.")
+else:
+    st.write(f"Welcome back, **{st.session_state.username}**!")
 
 if st.session_state.username:
-    # Show questions with radio buttons, preselect if already answered
+    # Render questions
+    all_answered = True
     for q_num, q_text in questions.items():
+        selected = st.session_state.answers.get(q_num, None)
         opts = options[q_num]
-        option_labels = list(opts.values())
-        option_keys = list(opts.keys())
+        try:
+            answer = st.radio(q_text, list(opts.keys()), format_func=lambda x: opts[x], index=list(opts.keys()).index(selected) if selected else 0, key=f"q{q_num}")
+        except ValueError:
+            answer = st.radio(q_text, list(opts.keys()), format_func=lambda x: opts[x], index=0, key=f"q{q_num}")
+        st.session_state.answers[q_num] = answer
+        if not answer:
+            all_answered = False
 
-        current_answer_key = st.session_state.answers.get(q_num, None)
-
-        if current_answer_key and current_answer_key in option_keys:
-            default_index = option_keys.index(current_answer_key)
-            selected_label = st.radio(
-                q_text,
-                option_labels,
-                index=default_index,
-                key=f"q{q_num}"
-            )
-        else:
-            selected_label = st.radio(
-                q_text,
-                option_labels,
-                key=f"q{q_num}"
-            )
-        selected_key = option_keys[option_labels.index(selected_label)]
-        st.session_state.answers[q_num] = selected_key
-
-    # Make sure all questions answered before submit enabled
-    if len(st.session_state.answers) == len(questions):
-        if st.button("Submit Quiz"):
+    # Submit button only if all questions answered
+    if all_answered and not st.session_state.submitted:
+        if st.button("Submit"):
             st.session_state.submitted = True
-    else:
-        st.info(f"Please answer all {len(questions)} questions to submit.")
+    elif not all_answered:
+        st.warning("Please answer all questions before submitting.")
 
-    if st.button("Reset Quiz"):
+    # Reset button
+    if st.button("Reset Test"):
         st.session_state.answers = {}
         st.session_state.submitted = False
         st.session_state.username = ""
+        st.session_state.reset_requested = True
 
-    # Show results and certificate download when submitted
+    # Show results if submitted
     if st.session_state.submitted:
         personality, description = analyze_personality(st.session_state.answers)
         st.markdown(f"### Results for {st.session_state.username}")
@@ -203,4 +170,4 @@ if st.session_state.username:
 
         cert_image = generate_certificate(st.session_state.username, personality)
         st.image(cert_image)
-        st.download_button("Download Certificate", cert_image, file_name="certificate
+        st.download_button("Download Certificate", cert_image, file_name="certificate.png", mime="image/png")

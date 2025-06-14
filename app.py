@@ -2,23 +2,14 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 
 # ---------------------- GOOGLE SHEETS SETUP ----------------------
-def connect_to_google_sheet():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("your_service_account.json", scope)
-    client = gspread.authorize(creds)
-    sheet = client.open("PersonalityQuizData").sheet1  # Change this to your sheet name
-    return sheet
-
-def log_to_sheet(username, personality, answers):
-    try:
-        sheet = connect_to_google_sheet()
-        row = [username, personality] + [answers.get(q, "") for q in range(1, 21)]
-        sheet.append_row(row)
-    except Exception as e:
-        st.error(f"Error logging to Google Sheets: {e}")
+SHEET_NAME = "phycic robot 1"
+SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
+CREDS = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
+client = gspread.authorize(CREDS)
+sheet = client.open(SHEET_NAME).sheet1
 
 # ---------------------- INIT STATE ----------------------
 if "submitted" not in st.session_state:
@@ -76,121 +67,3 @@ options = {
     19: {"A": "Quickly", "B": "After thought"},
     20: {"A": "Success", "B": "Happiness", "C": "Growth", "D": "Peace"}
 }
-
-# ---------------------- ANALYZE PERSONALITY ----------------------
-def analyze_personality(answers):
-    red_count = sum(1 for q in answers if answers[q] == "R")
-    black_count = sum(1 for q in answers if answers[q] == "B")
-
-    traits = []
-    if red_count > black_count:
-        traits.append("bold")
-    elif black_count > red_count:
-        traits.append("calm")
-    else:
-        traits.append("balanced")
-
-    if answers.get(7) == "A":
-        traits.append("introspective")
-    if answers.get(8) == "A":
-        traits.append("curious")
-    if answers.get(13) == "A":
-        traits.append("spontaneous")
-    if answers.get(14) == "A":
-        traits.append("goal-oriented")
-
-    if "bold" in traits and "curious" in traits:
-        personality = "Explorer"
-    elif "calm" in traits and "goal-oriented" in traits:
-        personality = "Strategist"
-    elif "spontaneous" in traits and "curious" in traits:
-        personality = "Adventurer"
-    else:
-        personality = "Observer"
-
-    description = f"You are a {personality}! This means you're {', '.join(traits)}."
-    return personality, description
-
-# ---------------------- CERTIFICATE GENERATION ----------------------
-def generate_certificate(username, personality):
-    width, height = 700, 400
-    image = Image.new("RGB", (width, height), color="#f8f4e3")
-    draw = ImageDraw.Draw(image)
-
-    # Fonts (adjust path if needed)
-    try:
-        title_font = ImageFont.truetype("arial.ttf", 40)
-        subtitle_font = ImageFont.truetype("arial.ttf", 24)
-    except IOError:
-        title_font = ImageFont.load_default()
-        subtitle_font = ImageFont.load_default()
-
-    draw.text((width//2, 50), "Certificate of Personality", font=title_font, fill="#4b3b2b", anchor="mm")
-    draw.text((width//2, 130), f"This certifies that", font=subtitle_font, fill="#4b3b2b", anchor="mm")
-    draw.text((width//2, 180), username, font=title_font, fill="#a0522d", anchor="mm")
-    draw.text((width//2, 240), f"is identified as a", font=subtitle_font, fill="#4b3b2b", anchor="mm")
-    draw.text((width//2, 290), personality, font=title_font, fill="#d2691e", anchor="mm")
-    draw.text((width//2, 350), "Deep Personality Quiz 2025", font=subtitle_font, fill="#4b3b2b", anchor="mm")
-
-    # Draw border
-    border_color = "#d2691e"
-    draw.rectangle([(10, 10), (width-10, height-10)], outline=border_color, width=5)
-
-    # Save to bytes
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    buffer.seek(0)
-    return buffer
-
-# ---------------------- STREAMLIT UI ----------------------
-
-st.set_page_config(page_title="🧠 Deep Personality Quiz", layout="centered")
-
-st.title("🧠 Deep Personality Quiz")
-
-if not st.session_state.username:
-    username_input = st.text_input("Enter your name to start:", value="")
-    if username_input:
-        st.session_state.username = username_input
-        st.experimental_rerun()
-    else:
-        st.stop()
-
-if not st.session_state.submitted:
-    st.header(f"Hello, {st.session_state.username}! Please answer the following questions:")
-
-    all_answered = True
-    for q_num, q_text in questions.items():
-        opts = options[q_num]
-        current_answer = st.session_state.answers.get(q_num, None)
-        choice = st.radio(q_text, options=list(opts.keys()), format_func=lambda x: opts[x], index=list(opts.keys()).index(current_answer) if current_answer else 0, key=f"q{q_num}")
-        st.session_state.answers[q_num] = choice
-
-        # Check if answer is selected properly
-        if st.session_state.answers[q_num] not in opts:
-            all_answered = False
-
-    if not all_answered:
-        st.warning("Please answer all questions to proceed.")
-    else:
-        if st.button("Submit Quiz"):
-            st.session_state.submitted = True
-
-if st.session_state.submitted:
-    personality, description = analyze_personality(st.session_state.answers)
-    st.success(description)
-
-    cert_image_buffer = generate_certificate(st.session_state.username, personality)
-    st.image(cert_image_buffer)
-
-    st.download_button("Download Certificate", cert_image_buffer, file_name="personality_certificate.png", mime="image/png")
-
-    # Log the results to Google Sheets
-    log_to_sheet(st.session_state.username, personality, st.session_state.answers)
-
-    if st.button("Retake Quiz"):
-        st.session_state.submitted = False
-        st.session_state.answers = {}
-        st.session_state.username = ""
-        st.experimental_rerun()
-creds = 945f3b0e423a1f0258fa95430a4288593f2a7321

@@ -56,7 +56,7 @@ options = {
 def analyze_personality(answers):
     red_count = sum(1 for q in ["Q10","Q11","Q12","Q13","Q14","Q15"] if answers.get(q) == "R")
     black_count = 6 - red_count
-    gender = answers.get("Q1", "Unknown")
+    gender = options["Q1"].get(answers.get("Q1"), "Unknown")
 
     if red_count > black_count:
         personality = "You are adventurous and bold."
@@ -70,7 +70,7 @@ def analyze_personality(answers):
 # Certificate display
 def show_certificate():
     st.markdown(f"""
-    <div style="border: 2px solid black; padding: 20px; margin-top: 20px; text-align: center;">
+    <div style="border: 2px solid black; padding: 20px; margin-top: 20px; text-align: center; background-color: #f9f9f9;">
         <h2>Certificate of Completion</h2>
         <p>This certifies that <strong>{st.session_state.username}</strong> has completed the Deep Personality Quiz.</p>
         <p><em>Thank you for participating!</em></p>
@@ -81,35 +81,32 @@ def show_certificate():
 st.title("Deep Personality Quiz")
 
 if not st.session_state.submitted:
-    username = st.text_input("Please enter your name:", value=st.session_state.username, key="username")
-    if username.strip() != "":
-        st.session_state.username = username
+    st.text_input("Please enter your name:", value=st.session_state.username, key="username")
 
-    if st.session_state.username != "":
+    if st.session_state.username.strip() != "":
         st.write(f"Welcome, {st.session_state.username}! Please answer the following questions:")
 
-        # Display questions and radio buttons for answers
+        # Display questions and collect answers
         for qid, question in questions.items():
             opts = options[qid]
-            # Use keys to avoid Streamlit warnings
             choice = st.radio(question, list(opts.keys()), format_func=lambda x: opts[x], key=qid)
             st.session_state.answers[qid] = choice
 
         if st.button("Submit"):
-            # Make sure all questions answered
             if len(st.session_state.answers) == len(questions):
                 st.session_state.submitted = True
             else:
                 st.warning("Please answer all questions before submitting.")
 
 else:
-    # After submission - show personality analysis and certificate
-    result = analyze_personality(st.session_state.answers)
+    # Show result and certificate after submission
     st.success("Quiz Completed!")
+    result = analyze_personality(st.session_state.answers)
     st.write(result)
     show_certificate()
+
     if st.button("Retake Quiz"):
-        # Reset session state
+        # Reset all states
         st.session_state.submitted = False
         st.session_state.answers = {}
         st.session_state.username = ""

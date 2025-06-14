@@ -1,5 +1,3 @@
-pip install streamlit gspread google-auth Pillow
-pip install gspread
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
@@ -99,12 +97,12 @@ def analyze_personality(answers):
     return personality, description
 
 # ---------------------- GOOGLE SHEETS SETUP ----------------------
-SERVICE_ACCOUNT_FILE = 'deep-personality-quiz-api"
+SERVICE_ACCOUNT_FILE = "deep-personality-quiz-api.json"
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 gc = gspread.authorize(creds)
-sheet = gc.open("phycic robot 1").sheet1  # your Google Sheet name here
+sheet = gc.open("phycic robot 1").sheet1
 
 def log_quiz_results(username, answers):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -118,7 +116,6 @@ def generate_certificate(name, personality):
     img = Image.new('RGB', (width, height), color='navy')
     draw = ImageDraw.Draw(img)
 
-    # Load a font (using default PIL font here for portability)
     try:
         font_title = ImageFont.truetype("arial.ttf", 50)
         font_body = ImageFont.truetype("arial.ttf", 30)
@@ -126,13 +123,11 @@ def generate_certificate(name, personality):
         font_title = ImageFont.load_default()
         font_body = ImageFont.load_default()
 
-    # Draw text
     draw.text((width//2 - 180, 50), "Certificate of Completion", fill="white", font=font_title)
     draw.text((width//2 - 230, 150), f"Presented to: {name}", fill="white", font=font_body)
     draw.text((width//2 - 230, 220), f"Personality Type: {personality}", fill="white", font=font_body)
     draw.text((width//2 - 350, 290), "Thank you for completing the Deep Personality Quiz!", fill="white", font=font_body)
 
-    # Save to bytes
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     buf.seek(0)
@@ -142,7 +137,6 @@ def generate_certificate(name, personality):
 def main():
     st.title("🧠 Deep Personality Quiz")
 
-    # Username input (reset answers if username changes)
     username = st.text_input("Enter your name to start the quiz:", value=st.session_state.username)
     if username != st.session_state.username:
         st.session_state.username = username
@@ -153,12 +147,10 @@ def main():
         st.warning("Please enter your name to proceed.")
         return
 
-    # Show questions if not submitted
     if not st.session_state.submitted:
         for q_num in range(1, 21):
             q_text = questions[q_num]
             opts = options[q_num]
-            # Pre-select previously chosen answer if any
             default_answer = st.session_state.answers.get(q_num, None)
             st.session_state.answers[q_num] = st.radio(
                 q_text,
@@ -167,23 +159,19 @@ def main():
                 key=f"q{q_num}"
             )
 
-        # Check if all questions are answered before allowing submit
         if all(st.session_state.answers.get(i) for i in range(1, 21)):
             if st.button("Submit"):
-                # Extract just the letter key (before colon) from the selected option string
                 for i in range(1, 21):
                     st.session_state.answers[i] = st.session_state.answers[i].split(":")[0]
                 st.session_state.submitted = True
         else:
             st.info("Please answer all questions before submitting.")
 
-    # After submit - show results and certificate
     if st.session_state.submitted:
         personality, description = analyze_personality(st.session_state.answers)
         st.header(f"Hello {st.session_state.username}, your personality is: {personality}")
         st.write(description)
 
-        # Log to Google Sheets once
         if not st.session_state.get("logged_to_sheet", False):
             try:
                 log_quiz_results(st.session_state.username, st.session_state.answers)
@@ -192,14 +180,10 @@ def main():
             except Exception as e:
                 st.error(f"Failed to log results: {e}")
 
-        # Generate and show certificate
         cert_image = generate_certificate(st.session_state.username, personality)
         st.image(cert_image)
-
-        # Provide download button for the certificate
         st.download_button("Download Certificate", cert_image, file_name="certificate.png", mime="image/png")
 
-    # Reset button to start over
     if st.button("Reset Quiz"):
         st.session_state.submitted = False
         st.session_state.answers = {}

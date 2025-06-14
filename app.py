@@ -13,7 +13,12 @@ questions = [
     "How many close friends do you have?",
     "Do you consider yourself more introverted or extroverted?",
     "Do you prefer routine or spontaneity?",
-    "Do you make decisions more based o
+    "Do you make decisions more based on logic or emotions?",
+    "Do you enjoy working in teams or alone?",
+    "Are you more future-focused or present-minded?",
+    "Do you value tradition or innovation more?",
+    "Are you more of a planner or a go-with-the-flow type?",
+]
 questions += [
     "Would you rather read a book or attend a party?",
     "Do you trust people easily?",

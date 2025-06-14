@@ -221,3 +221,4 @@ if st.session_state.submitted:
         file_name=f"{st.session_state.username}_personality_certificate.png",
         mime="image/png"
     )
+pip install gspread oauth2client

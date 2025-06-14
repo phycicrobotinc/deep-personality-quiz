@@ -1,8 +1,24 @@
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+# ---------------------- GOOGLE SHEETS SETUP ----------------------
+def connect_to_google_sheet():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("your_service_account.json", scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("PersonalityQuizData").sheet1  # Change this to your sheet name
+    return sheet
+
+def log_to_sheet(username, personality, answers):
+    try:
+        sheet = connect_to_google_sheet()
+        row = [username, personality] + [answers.get(q, "") for q in range(1, 21)]
+        sheet.append_row(row)
+    except Exception as e:
+        st.error(f"Error logging to Google Sheets: {e}")
 
 # ---------------------- INIT STATE ----------------------
 if "submitted" not in st.session_state:
@@ -96,148 +112,84 @@ def analyze_personality(answers):
     return personality, description
 
 # ---------------------- CERTIFICATE GENERATION ----------------------
-def generate_certificate(name, personality, description):
-    # Create blank image
-    width, height = 800, 600
-    image = Image.new("RGB", (width, height), color="#f5f5dc")  # light beige background
+def generate_certificate(username, personality):
+    width, height = 700, 400
+    image = Image.new("RGB", (width, height), color="#f8f4e3")
     draw = ImageDraw.Draw(image)
 
-    # Load fonts (use default PIL font or replace with .ttf path if available)
+    # Fonts (adjust path if needed)
     try:
         title_font = ImageFont.truetype("arial.ttf", 40)
-        subtitle_font = ImageFont.truetype("arial.ttf", 30)
-        body_font = ImageFont.truetype("arial.ttf", 20)
+        subtitle_font = ImageFont.truetype("arial.ttf", 24)
     except IOError:
         title_font = ImageFont.load_default()
         subtitle_font = ImageFont.load_default()
-        body_font = ImageFont.load_default()
+
+    draw.text((width//2, 50), "Certificate of Personality", font=title_font, fill="#4b3b2b", anchor="mm")
+    draw.text((width//2, 130), f"This certifies that", font=subtitle_font, fill="#4b3b2b", anchor="mm")
+    draw.text((width//2, 180), username, font=title_font, fill="#a0522d", anchor="mm")
+    draw.text((width//2, 240), f"is identified as a", font=subtitle_font, fill="#4b3b2b", anchor="mm")
+    draw.text((width//2, 290), personality, font=title_font, fill="#d2691e", anchor="mm")
+    draw.text((width//2, 350), "Deep Personality Quiz 2025", font=subtitle_font, fill="#4b3b2b", anchor="mm")
 
     # Draw border
-    border_color = "#6a0dad"  # purple
-    border_width = 10
-    draw.rectangle([border_width//2, border_width//2, width-border_width//2, height-border_width//2], outline=border_color, width=border_width)
+    border_color = "#d2691e"
+    draw.rectangle([(10, 10), (width-10, height-10)], outline=border_color, width=5)
 
-    # Title
-    draw.text((width//2, 60), "Personality Certificate", fill=border_color, font=title_font, anchor="mm")
+    # Save to bytes
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
 
-    # Name
-    draw.text((width//2, 150), name, fill="#333333", font=subtitle_font, anchor="mm")
+# ---------------------- STREAMLIT UI ----------------------
 
-    # Personality Type
-    draw.text((width//2, 210), f"Personality: {personality}", fill="#555555", font=subtitle_font, anchor="mm")
-
-    # Description (wrap text)
-    import textwrap
-    lines = textwrap.wrap(description, width=50)
-    y_text = 270
-    for line in lines:
-        draw.text((width//2, y_text), line, fill="#444444", font=body_font, anchor="mm")
-        y_text += 30
-
-    return image
-
-# ---------------------- APP UI ----------------------
 st.set_page_config(page_title="🧠 Deep Personality Quiz", layout="centered")
 
 st.title("🧠 Deep Personality Quiz")
-st.write("Fill out all questions below and get your personality result!")
 
-# Reset button
-if st.button("Reset Quiz"):
-    st.session_state.submitted = False
-    st.session_state.answers = {}
-    st.session_state.username = ""
-
-# Enter username
-if not st.session_state.submitted:
-    name = st.text_input("Enter your name:", value=st.session_state.username)
-    if name != st.session_state.username:
-        st.session_state.username = name
-        st.session_state.answers = {}  # clear answers if username changed
-
-    if not st.session_state.username.strip():
-        st.warning("Please enter your name to start the quiz.")
+if not st.session_state.username:
+    username_input = st.text_input("Enter your name to start:", value="")
+    if username_input:
+        st.session_state.username = username_input
+        st.experimental_rerun()
+    else:
         st.stop()
 
-# Questions (only show if not submitted)
 if not st.session_state.submitted:
-    for q_num in sorted(questions.keys()):
-        q_text = questions[q_num]
+    st.header(f"Hello, {st.session_state.username}! Please answer the following questions:")
+
+    all_answered = True
+    for q_num, q_text in questions.items():
         opts = options[q_num]
-
-        # Prepare options list for selectbox with placeholder
-        option_keys = list(opts.keys())
-        option_labels = [f"{key}: {opts[key]}" for key in option_keys]
-        placeholder = "Choose an option"
-        select_options = [placeholder] + option_labels
-
-        # Get current answer if any
         current_answer = st.session_state.answers.get(q_num, None)
-        if current_answer in option_keys:
-            default_index = option_keys.index(current_answer) + 1
-        else:
-            default_index = 0  # placeholder
+        choice = st.radio(q_text, options=list(opts.keys()), format_func=lambda x: opts[x], index=list(opts.keys()).index(current_answer) if current_answer else 0, key=f"q{q_num}")
+        st.session_state.answers[q_num] = choice
 
-        selected_label = st.selectbox(
-            label=q_text,
-            options=select_options,
-            index=default_index,
-            key=f"q{q_num}"
-        )
+        # Check if answer is selected properly
+        if st.session_state.answers[q_num] not in opts:
+            all_answered = False
 
-        # Update session state only if a real option is selected
-        if selected_label != placeholder:
-            selected_key = selected_label.split(":")[0]
-            st.session_state.answers[q_num] = selected_key
-        else:
-            # If placeholder selected, remove answer if any
-            st.session_state.answers.pop(q_num, None)
-
-    # Check if all questions answered
-    if len(st.session_state.answers) < len(questions):
-        st.warning("Please answer all questions to submit.")
+    if not all_answered:
+        st.warning("Please answer all questions to proceed.")
     else:
         if st.button("Submit Quiz"):
             st.session_state.submitted = True
 
-# Show results and certificate
 if st.session_state.submitted:
     personality, description = analyze_personality(st.session_state.answers)
+    st.success(description)
 
-    st.header("Your Personality Result")
-    st.markdown(f"### {personality}")
-    st.write(description)
+    cert_image_buffer = generate_certificate(st.session_state.username, personality)
+    st.image(cert_image_buffer)
 
-    cert_img = generate_certificate(st.session_state.username, personality, description)
+    st.download_button("Download Certificate", cert_image_buffer, file_name="personality_certificate.png", mime="image/png")
 
-    st.image(cert_img, caption="Your Personality Certificate", use_column_width=True)
+    # Log the results to Google Sheets
+    log_to_sheet(st.session_state.username, personality, st.session_state.answers)
 
-    # Prepare certificate download
-    buf = io.BytesIO()
-    cert_img.save(buf, format="PNG")
-    byte_im = buf.getvalue()
-
-    st.download_button(
-        label="Download Certificate",
-        data=byte_im,
-        file_name=f"{st.session_state.username}_personality_certificate.png",
-        mime="image/png"
-    )
-pip install gspread oauth2client
-def log_to_google_sheets(data_dict):
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("your_key_file.json", scope)
-    client = gspread.authorize(creds)
-
-    # Open the sheet (replace with your actual sheet name)
-    sheet = client.open("Deep Personality Data").sheet1
-
-    # Convert the dictionary to a list of values (order must match the header)
-    row = [data_dict.get(key, "") for key in sheet.row_values(1)]
-    sheet.append_row(row)
-log_to_google_sheets({
-    "Username": st.session_state.username,
-    "Personality": personality,
-    "Traits": ", ".join(traits),
-    "Answers": str(st.session_state.answers)
-})
+    if st.button("Retake Quiz"):
+        st.session_state.submitted = False
+        st.session_state.answers = {}
+        st.session_state.username = ""
+        st.experimental_rerun()

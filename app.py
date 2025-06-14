@@ -95,17 +95,48 @@ def analyze_personality(answers):
 
 # ---------------------- CERTIFICATE GENERATION ----------------------
 def generate_certificate(name, personality):
-    width, height = 600, 400
+    width, height = 700, 450
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
 
-    # Use default PIL font
-    title_font = ImageFont.load_default()
-    subtitle_font = ImageFont.load_default()
+    # Fonts - try to load nicer fonts or fallback to default
+    try:
+        title_font = ImageFont.truetype("arial.ttf", 40)
+        subtitle_font = ImageFont.truetype("arial.ttf", 28)
+        small_font = ImageFont.truetype("arial.ttf", 18)
+    except IOError:
+        title_font = ImageFont.load_default()
+        subtitle_font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
 
-    draw.text((width//2 - 100, 50), "Certificate of Personality", fill="black", font=title_font)
-    draw.text((width//2 - 100, 150), f"Presented to: {name}", fill="black", font=subtitle_font)
-    draw.text((width//2 - 100, 200), f"Personality Type: {personality}", fill="black", font=subtitle_font)
+    # Draw border
+    border_color = (30, 144, 255)  # DodgerBlue
+    border_width = 8
+    draw.rectangle([border_width//2, border_width//2, width - border_width//2, height - border_width//2], outline=border_color, width=border_width)
+
+    # Title
+    title_text = "Certificate of Personality"
+    w, h = draw.textsize(title_text, font=title_font)
+    draw.text(((width - w) / 2, 50), title_text, fill=border_color, font=title_font)
+
+    # Presented to
+    presented_text = f"Presented to:"
+    w, h = draw.textsize(presented_text, font=subtitle_font)
+    draw.text(((width - w) / 2, 130), presented_text, fill="black", font=subtitle_font)
+
+    # Name (larger)
+    w, h = draw.textsize(name, font=subtitle_font)
+    draw.text(((width - w) / 2, 170), name, fill=(70, 70, 70), font=subtitle_font)
+
+    # Personality type
+    personality_text = f"Personality Type: {personality}"
+    w, h = draw.textsize(personality_text, font=small_font)
+    draw.text(((width - w) / 2, 250), personality_text, fill="black", font=small_font)
+
+    # Footer
+    footer_text = "Thank you for taking the Deep Personality Quiz!"
+    w, h = draw.textsize(footer_text, font=small_font)
+    draw.text(((width - w) / 2, height - 50), footer_text, fill=(100, 100, 100), font=small_font)
 
     # Save to bytes buffer
     buf = io.BytesIO()
@@ -172,7 +203,4 @@ if st.session_state.username:
 
         cert_image = generate_certificate(st.session_state.username, personality)
         st.image(cert_image)
-        st.download_button("Download Certificate", cert_image, file_name="certificate.png", mime="image/png")
-
-else:
-    st.info("Please enter your name to start the quiz.")
+        st.download_button("Download Certificate", cert_image, file_name="certificate

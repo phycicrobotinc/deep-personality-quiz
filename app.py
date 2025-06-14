@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
+pip install streamlit pillow
 
 # ----------- INIT SESSION STATE -----------
 if "submitted" not in st.session_state:

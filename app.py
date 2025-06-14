@@ -57,4 +57,5 @@ questions = {
 options = {
     "Q1": {"A": "🧠 Emotional", "B": "📊 Logical", "C": "⚡ Impulsive", "D": "👥 Social"},
     "Q2": {"A": "🤫 Withdraw and reflect", "B": "📝 Plan better", "C": "🔄 Try again differently", "D": "🗣️ Talk it out"},
-    "Q3": {"A": "📚 Reading alone", "B": "🧪 Learning a skill", "C": "✈️ Sponta
+    "Q3": {"A": "📚 Reading alone", "B": "🧪 Learning a skill", "C": "✈️ Spontaneous trip", "D": "🎉 Party or gathering"},
+

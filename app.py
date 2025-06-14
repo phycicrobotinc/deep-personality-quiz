@@ -73,6 +73,6 @@ if st.button("Submit"):
 
     if user_name:
         today = datetime.date.today().strftime("%B %d, %Y")
-        st.markdown(f"""
+        st.markdown(f"
         <div style="border: 3px solid #4CAF50; padding: 30px; border-radius: 15px; text-align: center; background-color: #f9f9f9;">
             <h2 style="color: #2E8B

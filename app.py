@@ -93,81 +93,159 @@ def analyze_personality(answers):
     description = f"You are a {personality}! This means you're {', '.join(traits)}."
     return personality, description
 
-# ---------------------- GENERATE CERTIFICATE ----------------------
-def generate_certificate(name, personality):
-    width, height = 800, 400
-    image = Image.new("RGB", (width, height), "white")
+# ---------------------- CERTIFICATE GENERATION ----------------------
+def generate_certificate(name, personality, description):
+    width, height = 900, 600
+    background_color = (255, 248, 220)  # light cream
+    border_color = (255, 69, 0)  # orange-red
+    border_thickness = 20
+
+    image = Image.new("RGB", (width, height), background_color)
     draw = ImageDraw.Draw(image)
 
-    # Load a font
+    # Draw border
+    for i in range(border_thickness):
+        draw.rectangle(
+            [i, i, width - i - 1, height - i - 1],
+            outline=border_color
+        )
+
+    # Load fonts with fallback
     try:
-        font_title = ImageFont.truetype("arial.ttf", 40)
-        font_subtitle = ImageFont.truetype("arial.ttf", 24)
-    except IOError:
-        font_title = ImageFont.load_default()
-        font_subtitle = ImageFont.load_default()
+        title_font = ImageFont.truetype("arial.ttf", 50)
+        subtitle_font = ImageFont.truetype("arial.ttf", 28)
+        body_font = ImageFont.truetype("arial.ttf", 22)
+    except:
+        title_font = ImageFont.load_default()
+        subtitle_font = ImageFont.load_default()
+        body_font = ImageFont.load_default()
 
-    # Draw title and subtitle
-    draw.text((width // 2, 50), "Certificate of Personality", fill="navy", font=font_title, anchor="mm")
-    draw.text((width // 2, 120), f"Presented to {name}", fill="black", font=font_subtitle, anchor="mm")
-    draw.text((width // 2, 180), f"For your personality type:", fill="black", font=font_subtitle, anchor="mm")
-    draw.text((width // 2, 240), f"{personality}", fill="darkgreen", font=font_title, anchor="mm")
+    # Title
+    title_text = "Certificate of Personality"
+    w, h = draw.textsize(title_text, font=title_font)
+    draw.text(((width - w) / 2, 60), title_text, fill=border_color, font=title_font)
 
-    # Add some decoration lines
-    draw.line([(50, 350), (width - 50, 350)], fill="navy", width=3)
-    draw.line([(50, 355), (width - 50, 355)], fill="gold", width=3)
+    # Recipient
+    name_text = f"Presented to: {name}"
+    w, h = draw.textsize(name_text, font=subtitle_font)
+    draw.text(((width - w) / 2, 160), name_text, fill="black", font=subtitle_font)
 
-    # Save to bytes
-    img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format='PNG')
-    img_byte_arr.seek(0)
-    return img_byte_arr
+    # Personality
+    personality_text = f"Personality Type: {personality}"
+    w, h = draw.textsize(personality_text, font=subtitle_font)
+    draw.text(((width - w) / 2, 220), personality_text, fill="black", font=subtitle_font)
 
-# ---------------------- STREAMLIT APP ----------------------
+    # Description block (wrap text)
+    def draw_multiline_text(draw_obj, text, pos, font, max_width, fill):
+        lines = []
+        words = text.split()
+        line = ""
+        for word in words:
+            test_line = line + word + " "
+            w, _ = draw_obj.textsize(test_line, font=font)
+            if w <= max_width:
+                line = test_line
+            else:
+                lines.append(line)
+                line = word + " "
+        lines.append(line)
+
+        y = pos[1]
+        for line in lines:
+            draw_obj.text((pos[0], y), line.strip(), font=font, fill=fill)
+            y += font.getsize(line)[1] + 5
+
+    description_text = description
+    draw_multiline_text(draw, description_text, (70, 280), body_font, width - 140, fill="black")
+
+    # Signature line
+    sig_y = height - 100
+    draw.line((width - 300, sig_y, width - 100, sig_y), fill=border_color, width=3)
+    sig_text = "Signature"
+    w, h = draw.textsize(sig_text, font=body_font)
+    draw.text((width - 200 - w / 2, sig_y + 10), sig_text, fill="black", font=body_font)
+
+    return image
+
+# ---------------------- APP UI ----------------------
 st.title("🧠 Deep Personality Quiz")
 
-if not st.session_state.username or st.session_state.reset_requested:
-    st.session_state.username = st.text_input("Enter your name to start:", value="")
-    st.session_state.reset_requested = False
-    if st.session_state.username:
-        st.success(f"Welcome, {st.session_state.username}! You can start the quiz now.")
+if not st.session_state.username:
+    username = st.text_input("Enter your name to begin the quiz:")
+    if username.strip():
+        st.session_state.username = username.strip()
+        st.session_state.answers = {}  # reset answers on new username
+        st.session_state.submitted = False
 else:
-    st.write(f"Welcome back, **{st.session_state.username}**!")
+    st.write(f"Hello, **{st.session_state.username}**! Please answer the questions below:")
 
-if st.session_state.username:
-    # Render questions
-    all_answered = True
+    # Display questions
     for q_num, q_text in questions.items():
-        selected = st.session_state.answers.get(q_num, None)
         opts = options[q_num]
-        try:
-            answer = st.radio(q_text, list(opts.keys()), format_func=lambda x: opts[x], index=list(opts.keys()).index(selected) if selected else 0, key=f"q{q_num}")
-        except ValueError:
-            answer = st.radio(q_text, list(opts.keys()), format_func=lambda x: opts[x], index=0, key=f"q{q_num}")
-        st.session_state.answers[q_num] = answer
-        if not answer:
-            all_answered = False
+        current_answer = st.session_state.answers.get(q_num, None)
+        # We pass the options values (displayed text) but store the keys (A, B, R, etc)
+        # But radio requires list of display values. We invert to get keys by value
+        # So for the radio buttons: the options shown are the option texts.
+        # But the value stored in answers should be the key.
+        # We'll store the selected key by matching the label clicked.
 
-    # Submit button only if all questions answered
-    if all_answered and not st.session_state.submitted:
+        option_labels = list(opts.values())
+        option_keys = list(opts.keys())
+
+        # Set default to None if unanswered so radio starts empty
+        default_idx = None
+        if current_answer:
+            try:
+                default_idx = option_keys.index(current_answer)
+            except ValueError:
+                default_idx = None
+
+        selected_label = st.radio(
+            q_text,
+            option_labels,
+            index=default_idx if default_idx is not None else 0 if current_answer else None,
+            key=f"q{q_num}",
+            horizontal=True,
+        )
+
+        # Find selected key for this label
+        try:
+            selected_key = option_keys[option_labels.index(selected_label)]
+            st.session_state.answers[q_num] = selected_key
+        except Exception:
+            # No selection yet
+            if q_num in st.session_state.answers:
+                del st.session_state.answers[q_num]
+
+    # Check all questions answered before allowing submit
+    if len(st.session_state.answers) == len(questions):
         if st.button("Submit"):
             st.session_state.submitted = True
-    elif not all_answered:
-        st.warning("Please answer all questions before submitting.")
+    else:
+        st.info(f"Please answer all {len(questions)} questions to submit.")
 
-    # Reset button
-    if st.button("Reset Test"):
-        st.session_state.answers = {}
+# ---------------------- RESULTS ----------------------
+if st.session_state.submitted:
+    personality, description = analyze_personality(st.session_state.answers)
+    st.header("Your Personality Result")
+    st.write(description)
+
+    cert_image = generate_certificate(st.session_state.username, personality, description)
+
+    buf = io.BytesIO()
+    cert_image.save(buf, format="PNG")
+    byte_im = buf.getvalue()
+
+    st.image(cert_image, caption="Your Certificate", use_column_width=True)
+    st.download_button(
+        "Download Certificate",
+        data=byte_im,
+        file_name="personality_certificate.png",
+        mime="image/png"
+    )
+
+    if st.button("Reset Quiz"):
         st.session_state.submitted = False
+        st.session_state.answers = {}
         st.session_state.username = ""
-        st.session_state.reset_requested = True
-
-    # Show results if submitted
-    if st.session_state.submitted:
-        personality, description = analyze_personality(st.session_state.answers)
-        st.markdown(f"### Results for {st.session_state.username}")
-        st.write(description)
-
-        cert_image = generate_certificate(st.session_state.username, personality)
-        st.image(cert_image)
-        st.download_button("Download Certificate", cert_image, file_name="certificate.png", mime="image/png")
+        st.experimental_rerun()

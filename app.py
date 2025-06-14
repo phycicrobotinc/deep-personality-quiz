@@ -1,11 +1,12 @@
+
 import streamlit as st
 import json
-import random
 import os
 
-# Load reference profiles from JSON or create them
+# File to store/load profiles
 PROFILES_FILE = "deep_profiles.json"
 
+# Load or create reference profiles
 if os.path.exists(PROFILES_FILE):
     with open(PROFILES_FILE, "r") as f:
         reference_profiles = json.load(f)
@@ -27,15 +28,19 @@ else:
 
 # Profile descriptions
 profile_descriptions = {
-    "Thinker": """You are methodical and rational.
-You analyze every decision, weigh pros and cons,
-and value logic over emotion.""",
-    "Adventurer": """You crave excitement and novelty.
-Spontaneity and challenge fuel your spirit,
-and you thrive on exploring the unknown."""
+    "Thinker": (
+        "You are methodical and rational.\n"
+        "You analyze every decision, weigh pros and cons,\n"
+        "and value logic over emotion."
+    ),
+    "Adventurer": (
+        "You crave excitement and novelty.\n"
+        "Spontaneity and challenge fuel your spirit,\n"
+        "and you thrive on exploring the unknown."
+    )
 }
 
-# Questions and options
+# Questions and answer options
 questions = {
     "Q1": "How do you make decisions?",
     "Q2": "How do you handle failure?",
@@ -57,5 +62,4 @@ questions = {
 options = {
     "Q1": {"A": "🧠 Emotional", "B": "📊 Logical", "C": "⚡ Impulsive", "D": "👥 Social"},
     "Q2": {"A": "🤫 Withdraw and reflect", "B": "📝 Plan better", "C": "🔄 Try again differently", "D": "🗣️ Talk it out"},
-    "Q3": {"A": "📚 Reading alone", "B": "🧪 Learning a skill", "C": "✈️ Spontaneous trip", "D": "🎉 Party or gathering"},
-
+    "Q3": {"A": "📚 Reading alone", "B": "🧪 Learning a skill", "C": "✈️ Spontaneous trip", "D": "🎉 Party or gathering

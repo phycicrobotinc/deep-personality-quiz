@@ -1,65 +1,6 @@
-# ---------------------- CERTIFICATE ----------------------
-def generate_certificate(name, personality):
-    width, height = 800, 600
-    image = Image.new("RGB", (width, height), color=(30, 30, 30))
-    draw = ImageDraw.Draw(image)
-
-    try:
-        font_large = ImageFont.truetype("arial.ttf", 48)
-        font_small = ImageFont.truetype("arial.ttf", 28)
-    except:
-        font_large = ImageFont.load_default()
-        font_small = ImageFont.load_default()
-
-    draw.rectangle([(50, 50), (750, 550)], outline="gold", width=6)
-    draw.text((width//2 - 200, 100), "🎖️ Certificate of Personality", font=font_large, fill="white")
-    draw.text((width//2 - 180, 250), f"Awarded to:", font=font_small, fill="lightgray")
-    draw.text((width//2 - 150, 300), name, font=font_large, fill="cyan")
-    draw.text((width//2 - 250, 400), f"For being a true {personality}!", font=font_small, fill="gold")
-
-    byte_io = io.BytesIO()
-    image.save(byte_io, format="PNG")
-    byte_io.seek(0)
-    return byte_io
-
-# ---------------------- RESULTS ----------------------
-def show_results():
-    personality, description = analyze_personality(st.session_state.answers)
-
-    st.subheader("🎯 Your Personality Result")
-    st.success(description)
-
-    cert_image = generate_certificate(st.session_state.username, personality)
-    st.image(cert_image, caption="Your Certificate", use_column_width=True)
-    st.download_button("📥 Download Certificate", cert_image, file_name="personality_certificate.png")
-
-    if st.button("🔁 Retake Quiz"):
-        st.session_state.reset_requested = True
-        st.session_state.submitted = False
-        st.session_state.answers = {}
-        st.experimental_rerun()
-
-# ---------------------- MAIN ----------------------
-def main():
-    if st.session_state.submitted:
-        show_results()
-    else:
-        show_quiz()
-
-if __name__ == "__main__":
-    main()
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
-import gspread
-from google.oauth2.service_account import Credentials
-
-# ---------------------- GOOGLE SHEETS SETUP ----------------------
-SHEET_NAME = "phycic robot 1"
-SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
-CREDS = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
-client = gspread.authorize(CREDS)
-sheet = client.open(SHEET_NAME).sheet1
 
 # ---------------------- INIT STATE ----------------------
 if "submitted" not in st.session_state:
@@ -117,6 +58,81 @@ options = {
     19: {"A": "Quickly", "B": "After thought"},
     20: {"A": "Success", "B": "Happiness", "C": "Growth", "D": "Peace"}
 }
+
+# ---------------------- ANALYZE PERSONALITY ----------------------
+def analyze_personality(answers):
+    red_count = sum(1 for q in answers if answers[q] == "R")
+    black_count = sum(1 for q in answers if answers[q] == "B")
+
+    traits = []
+    if red_count > black_count:
+        traits.append("bold")
+    elif black_count > red_count:
+        traits.append("calm")
+    else:
+        traits.append("balanced")
+
+    if answers.get(7) == "A":
+        traits.append("introspective")
+    if answers.get(8) == "A":
+        traits.append("curious")
+    if answers.get(13) == "A":
+        traits.append("spontaneous")
+    if answers.get(14) == "A":
+        traits.append("goal-oriented")
+
+    if "bold" in traits and "curious" in traits:
+        personality = "Explorer"
+    elif "calm" in traits and "goal-oriented" in traits:
+        personality = "Strategist"
+    elif "spontaneous" in traits and "curious" in traits:
+        personality = "Adventurer"
+    else:
+        personality = "Observer"
+
+    description = f"You are a {personality}! This means you're {', '.join(traits)}."
+    return personality, description
+
+# ---------------------- GOOGLE SHEETS LOGGING ----------------------
+def update_google_sheet(username, answers):
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_file("service_account.json", scopes=scope)
+        client = gspread.authorize(creds)
+        sheet = client.open("phycic robot 1").sheet1
+
+        row = [username] + [answers.get(q, "") for q in sorted(questions.keys())]
+        sheet.append_row(row)
+    except Exception as e:
+        st.error(f"Error saving to Google Sheets: {e}")
+
+# ---------------------- CERTIFICATE ----------------------
+def generate_certificate(name, personality):
+    width, height = 800, 600
+    image = Image.new("RGB", (width, height), color=(30, 30, 30))
+    draw = ImageDraw.Draw(image)
+
+    try:
+        font_large = ImageFont.truetype("arial.ttf", 48)
+        font_small = ImageFont.truetype("arial.ttf", 28)
+    except:
+        font_large = ImageFont.load_default()
+        font_small = ImageFont.load_default()
+
+    draw.rectangle([(50, 50), (750, 550)], outline="gold", width=6)
+    draw.text((width//2 - 200, 100), "🎖️ Certificate of Personality", font=font_large, fill="white")
+    draw.text((width//2 - 180, 250), f"Awarded to:", font=font_small, fill="lightgray")
+    draw.text((width//2 - 150, 300), name, font=font_large, fill="cyan")
+    draw.text((width//2 - 250, 400), f"For being a true {personality}!", font=font_small, fill="gold")
+
+    byte_io = io.BytesIO()
+    image.save(byte_io, format="PNG")
+    byte_io.seek(0)
+    return byte_io
+
 # ---------------------- QUIZ FORM ----------------------
 def show_quiz():
     st.title("🧠 Deep Personality Quiz")
@@ -138,7 +154,6 @@ def show_quiz():
                 key=f"q{q_num}"
             )
 
-            # Save answer in reverse (value to key)
             if selected:
                 reverse_lookup = {v: k for k, v in opts.items()}
                 st.session_state.answers[q_num] = reverse_lookup[selected]
@@ -152,18 +167,27 @@ def show_quiz():
                 st.session_state.submitted = True
                 update_google_sheet(st.session_state.username, st.session_state.answers)
 
-# ---------------------- GOOGLE SHEETS LOGGING ----------------------
-def update_google_sheet(username, answers):
-    try:
-        import gspread
-        from google.oauth2.service_account import Credentials
+# ---------------------- RESULTS ----------------------
+def show_results():
+    personality, description = analyze_personality(st.session_state.answers)
+    st.subheader("🎯 Your Personality Result")
+    st.success(description)
 
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_file("service_account.json", scopes=scope)
-        client = gspread.authorize(creds)
-        sheet = client.open("phycic robot 1").sheet1
+    cert_image = generate_certificate(st.session_state.username, personality)
+    st.image(cert_image, caption="Your Certificate", use_column_width=True)
+    st.download_button("📥 Download Certificate", cert_image, file_name="personality_certificate.png")
 
-        row = [username] + [answers.get(q, "") for q in sorted(questions.keys())]
-        sheet.append_row(row)
-    except Exception as e:
-        st.error(f"Error saving to Google Sheets: {e}")
+    if st.button("🔁 Retake Quiz"):
+        st.session_state.reset_requested = True
+        st.session_state.submitted = False
+        st.session_state.answers = {}
+        st.experimental_rerun()
+
+# ---------------------- MAIN ----------------------
+def main():
+    if st.session_state.submitted:
+        show_results()
+    else:
+        show_quiz()
+
+main()

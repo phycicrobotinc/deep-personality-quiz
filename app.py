@@ -1,5 +1,4 @@
 import streamlit as st
-import random
 
 # Initialize session state variables if not present
 if "submitted" not in st.session_state:
@@ -9,116 +8,123 @@ if "answers" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# Original questions without red/black
-base_questions = {
+# Questions dictionary with red/black questions spaced out
+questions = {
     "Q1": "What is your gender?",
     "Q2": "What is your age group?",
     "Q3": "What is your current employment status?",
-    "Q4": "What is your approximate annual income?",
-    "Q5": "How do you prefer to spend your free time?",
-    "Q6": "Do you consider yourself more introverted or extroverted?",
-    "Q7": "How important is financial security to you?",
-    "Q8": "Do you enjoy trying new experiences?",
-    "Q9": "Are you more analytical or creative?",
-    "Q16": "Do you prefer working alone or in a team?",
-    "Q17": "Are you more spontaneous or planned?",
-    "Q18": "How often do you set long-term goals?",
+    "Q4": "Red or Black?",
+    "Q5": "What is your approximate annual income?",
+    "Q6": "How do you prefer to spend your free time?",
+    "Q7": "Red or Black?",
+    "Q8": "Do you consider yourself more introverted or extroverted?",
+    "Q9": "How important is financial security to you?",
+    "Q10": "Red or Black?",
+    "Q11": "Do you enjoy trying new experiences?",
+    "Q12": "Are you more analytical or creative?",
+    "Q13": "Red or Black?",
+    "Q14": "Do you prefer working alone or in a team?",
+    "Q15": "Are you more spontaneous or planned?",
+    "Q16": "Red or Black?",
 }
 
-# Red/Black questions (answers only R or B)
-red_black_questions = {
-    "Q10": "Do you prefer red or black?",
-    "Q11": "Red or black?",
-    "Q12": "Red or black?",
-    "Q13": "Red or black?",
-    "Q14": "Red or black?",
-    "Q15": "Red or black?",
-}
-
-# Options dictionary
+# Options for each question (placeholder option will be added dynamically)
 options = {
-    "Q1": {"A": "Male", "B": "Female", "C": "Other", "D": "Prefer not to say"},
-    "Q2": {"A": "Under 18", "B": "18-24", "C": "25-34", "D": "35-44", "E": "45+"},
-    "Q3": {"A": "Employed full-time", "B": "Employed part-time", "C": "Student", "D": "Unemployed", "E": "Retired"},
-    "Q4": {"A": "<$20,000", "B": "$20,000-$50,000", "C": "$50,001-$100,000", "D": ">$100,000"},
-    "Q5": {"A": "Reading or relaxing", "B": "Sports or outdoor activities", "C": "Socializing", "D": "Creative hobbies"},
-    "Q6": {"A": "Introverted", "B": "Extroverted"},
-    "Q7": {"A": "Very important", "B": "Somewhat important", "C": "Not important"},
-    "Q8": {"A": "Yes, I love new experiences", "B": "Sometimes", "C": "Rarely"},
-    "Q9": {"A": "Analytical", "B": "Creative", "C": "Balanced"},
-    "Q10": {"R": "Red", "B": "Black"},
-    "Q11": {"R": "Red", "B": "Black"},
-    "Q12": {"R": "Red", "B": "Black"},
-    "Q13": {"R": "Red", "B": "Black"},
-    "Q14": {"R": "Red", "B": "Black"},
-    "Q15": {"R": "Red", "B": "Black"},
-    "Q16": {"A": "Alone", "B": "Team"},
-    "Q17": {"A": "Spontaneous", "B": "Planned"},
-    "Q18": {"A": "Often", "B": "Sometimes", "C": "Rarely"},
+    "Q1": ["Male", "Female", "Other", "Prefer not to say"],
+    "Q2": ["Under 18", "18-24", "25-34", "35-44", "45+"],
+    "Q3": ["Employed full-time", "Employed part-time", "Student", "Unemployed", "Retired"],
+    "Q4": ["Red", "Black"],
+    "Q5": ["<$20,000", "$20,000-$50,000", "$50,001-$100,000", ">$100,000"],
+    "Q6": ["Reading or relaxing", "Sports or outdoor activities", "Socializing", "Creative hobbies"],
+    "Q7": ["Red", "Black"],
+    "Q8": ["Introverted", "Extroverted"],
+    "Q9": ["Very important", "Somewhat important", "Not important"],
+    "Q10": ["Red", "Black"],
+    "Q11": ["Yes, I love new experiences", "Sometimes", "Rarely"],
+    "Q12": ["Analytical", "Creative", "Balanced"],
+    "Q13": ["Red", "Black"],
+    "Q14": ["Alone", "Team"],
+    "Q15": ["Spontaneous", "Planned"],
+    "Q16": ["Red", "Black"],
 }
 
-# Combine and shuffle question keys so red/black are mixed
-def get_shuffled_questions():
-    # List all question keys
-    all_questions = list(base_questions.items()) + list(red_black_questions.items())
-    # Shuffle the combined list to mix red/black questions
-    random.shuffle(all_questions)
-    return dict(all_questions)
-
-questions = get_shuffled_questions()
-
-# Personality analysis function remains the same
 def analyze_personality(answers):
-    red_count = sum(1 for q in red_black_questions if answers.get(q) == "R")
-    black_count = len(red_black_questions) - red_count
-    gender = options["Q1"].get(answers.get("Q1"), "Unknown")
-
+    # Count red/black answers from the red/black questions
+    red_qs = ["Q4", "Q7", "Q10", "Q13", "Q16"]
+    red_count = sum(1 for q in red_qs if answers.get(q) == "Red")
+    black_count = len(red_qs) - red_count
+    
+    # Use gender as example info
+    gender = answers.get("Q1", "Unknown")
+    
     if red_count > black_count:
         personality = "You are adventurous and bold."
     elif black_count > red_count:
         personality = "You are calm and thoughtful."
     else:
         personality = "You have a balanced personality."
-
+    
     return f"Hello {st.session_state.username}! {personality} Your gender is recorded as: {gender}."
 
-# Certificate display
 def show_certificate():
+    st.markdown("---")
+    st.header("Your Personality Certificate")
     st.markdown(f"""
-    <div style="border: 2px solid black; padding: 20px; margin-top: 20px; text-align: center; background-color: #f9f9f9;">
-        <h2>Certificate of Completion</h2>
-        <p>This certifies that <strong>{st.session_state.username}</strong> has completed the Deep Personality Quiz.</p>
-        <p><em>Thank you for participating!</em></p>
-    </div>
-    """, unsafe_allow_html=True)
+    **Name:** {st.session_state.username}  
+    **Result:** {analyze_personality(st.session_state.answers)}  
+    """)
+    st.balloons()
 
-# Main app
+# --- Streamlit app UI ---
+
 st.title("Deep Personality Quiz")
 
 if not st.session_state.submitted:
-    st.text_input("Please enter your name:", value=st.session_state.username, key="username")
+    # Username input (required)
+    username = st.text_input("Please enter your name:", value=st.session_state.username)
+    if username != st.session_state.username:
+        st.session_state.username = username
+    
+    if not username:
+        st.warning("Please enter your name to continue.")
+        st.stop()
 
-    if st.session_state.username.strip() != "":
-        st.write(f"Welcome, {st.session_state.username}! Please answer the following questions:")
+    # Questions with placeholder forcing user selection
+    for qid, qtext in questions.items():
+        opts = options[qid]
+        placeholder = "-- Select an option --"
+        select_options = [placeholder] + opts
+        
+        current_answer = st.session_state.answers.get(qid, placeholder)
+        
+        answer = st.selectbox(
+            qtext,
+            select_options,
+            index=select_options.index(current_answer) if current_answer in select_options else 0,
+            key=qid
+        )
+        
+        if answer != placeholder:
+            st.session_state.answers[qid] = answer
+        else:
+            # Remove answer if placeholder selected
+            st.session_state.answers.pop(qid, None)
+    
+    # Submit button and validation
+    if st.button("Submit"):
+        unanswered = [q for q in questions if q not in st.session_state.answers]
+        if unanswered:
+            st.error(f"Please answer all questions before submitting. Missing: {', '.join(unanswered)}")
+        else:
+            st.session_state.submitted = True
+            st.success("Thank you for completing the quiz!")
+            show_certificate()
 
-        # Show shuffled questions
-        for qid, question in questions.items():
-            opts = options[qid]
-            choice = st.radio(question, list(opts.keys()), format_func=lambda x: opts[x], key=qid)
-            st.session_state.answers[qid] = choice
-
-        if st.button("Submit"):
-            if len(st.session_state.answers) == len(questions):
-                st.session_state.submitted = True
-            else:
-                st.warning("Please answer all questions before submitting.")
 else:
-    st.success("Quiz Completed!")
-    result = analyze_personality(st.session_state.answers)
-    st.write(result)
+    # After submission, show certificate and allow reset
     show_certificate()
-
+    
     if st.button("Retake Quiz"):
         st.session_state.submitted = False
         st.session_state.answers = {}
-        st.session_state.username = ""
+        st.experimental_rerun()

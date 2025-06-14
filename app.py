@@ -235,3 +235,9 @@ def log_to_google_sheets(data_dict):
     # Convert the dictionary to a list of values (order must match the header)
     row = [data_dict.get(key, "") for key in sheet.row_values(1)]
     sheet.append_row(row)
+log_to_google_sheets({
+    "Username": st.session_state.username,
+    "Personality": personality,
+    "Traits": ", ".join(traits),
+    "Answers": str(st.session_state.answers)
+})

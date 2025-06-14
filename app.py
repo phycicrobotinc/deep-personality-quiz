@@ -73,6 +73,16 @@ if st.button("Submit"):
 
     if user_name:
         today = datetime.date.today().strftime("%B %d, %Y")
-        st.markdown(f"
+                st.markdown(f"""
         <div style="border: 3px solid #4CAF50; padding: 30px; border-radius: 15px; text-align: center; background-color: #f9f9f9;">
-            <h2 style="color: #2E8B
+            <h2 style="color: #2E8B57;">🎓 Certificate of Completion</h2>
+            <p style="font-size:18px;"><em>This certifies that</em></p>
+            <h1 style="margin: 10px 0; font-size: 32px;">{user_name}</h1>
+            <p style="font-size:18px;"><em>has completed the</em></p>
+            <h3 style="color: #333;">Deep Personality Quiz</h3>
+            <p style="font-size:18px;">on <strong>{today}</strong></p>
+            <p style="font-size:20px; margin-top: 20px;"><strong>🧠 Personality Type:</strong></p>
+            <h2 style="color: #4B0082;">{personality}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+

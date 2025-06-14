@@ -1,6 +1,8 @@
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
+python --version
+pip show streamlit
 
 # ---------------------- INIT STATE ----------------------
 if "submitted" not in st.session_state:

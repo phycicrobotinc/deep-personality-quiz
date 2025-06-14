@@ -1,3 +1,4 @@
+pip install gspread
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io

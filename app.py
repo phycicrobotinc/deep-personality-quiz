@@ -69,4 +69,4 @@ choices = {
 # Define personality types and review summaries
 personality_types = {
     "The Analyst": "You are thoughtful, strategic, and value logic and analysis. You enjoy exploring complex ideas and often seek knowledge.",
-    "The Diplomat": "You are empathetic, creative, and focused on harmony
+    "The Diplomat": "You are empathetic, creative, and focused on harmony"

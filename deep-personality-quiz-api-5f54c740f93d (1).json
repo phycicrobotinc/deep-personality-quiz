@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "deep-personality-quiz-api",
+  "private_key_id": "5f54c740f93dc1e0c1bcc2999c0710ffcc5d56a3",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC9CTF64Ivu42JP\nGrwmDek//wUjWv6somlMFnZFV5wtKrVqmB2bkK4yjkM+pWs2pqRhk6GED4zpMtTA\ncdktiyvFMUmafzcabBBjtZCyt8ZkB6LIBGbsLQROu7E3U4SqmvOuTmJqVoyo3+/q\njuclkYP9jyILXYnIJqevRUJko2HIji8+Mqhb/HtaMARNFsdgxanVteibUPZDMOXR\nzZHopStlfEvGykYxrTZvlUzdyIddC4q8guqVsRsP5V8ycJ0wZ8bqUTJrb9FdDWEP\nMQtvAZHg3HWIU2tX139x1PZJM3dJLMXudwanlLGHPLgvCn1d1DODLZdWgn+aQxdR\n+KYFNNwTAgMBAAECggEALTaUshog/gs+yULQu51aK6dYWEN8ZFgYLU22DhHNVfRA\nHfWyJzIsqATkyogQI6sp5/jCie6aOnCg+EKCumTuHCUUwLIqwNQV+3NC36wa9HPr\nGEINR/HgdOBpm50LPy7+l7NB0MNQs1eUb5qsaIzsb+obL3K48LlmJALBxYZabfhC\npLpetvhPWrs8EtEu08X0euXnQrhG304VrXmmygcPsQoygPoci255Mj7G+ry8rMAF\n3jrq8yr1HCXLtMK/YDgvIRQaTnm0xY5fCHMcixPHOPs4lDSagfut3EoXjDVVIZpx\nXgzQD/xV1SMv6z4CA5bxlf7o3/wB3VVa3+FaSDCfqQKBgQDpQIcH8V+0qI1JchB+\n9DgCQUnSC8pBW2HW4afzU5mHrq32OFe3im68nB0ZzQnqzcDNqjl1EsD2MAMnrNQJ\nu5wZwpksnoK21KV3LEFKZ9LKJK7TcBgNklPv+NFCJEAHteeehzZJ3/98uEOXr6Bi\nojPajc/uQv7lc6btg49hTy6IhwKBgQDPeL8FgR380Qxd5PuTOV+LxOvVF8Xqym3B\nDyfR5tqEqnHWtHlb6wU9PWn4ilbIsku5hffYrSg5AoZabhpUAgon6qJkpVJOsS8V\n/C7cJuj5NTSdMCvW6Sm9Ce1ADa4eT0Fhu3TVdc2m2GVwKCvosvRz/QzN22Zvpmsq\nKWhuzi5PFQKBgFqKKKAFqo+2qXkr5IlTBPajHyOAXhb2gMjnOMkz1zGatX4QqsPc\n4VUnCAi+1S2mhkOO4tS13d7yDhd1d6z7fQFmzwxJzxVm/3991y4plOHQUWhTZ5LF\nDP3mSFvzNEOJ8YlQlNsiLsrbv6j+jDQdICGi0GZ87PJl7RLe8WXlVXu7AoGAbQPB\nO58wppshqGSdXCqVbde3I20ubcSYDw1rmvt2bqcw0eRasFW5lwgiGpp2J1aoO3+N\nT6kMrYgKGJIp+2Jm+7pqQgAsU3T+jMrJxJwdZnTyhHW/U1mIuO/yXenSR9LVRAk/\nxrnzqWujQV+aUtdVY2zfwXs7RAdp3+mKGk70PlECgYEAik74Ij84fNLuhnMTes58\nQlAwB978JhvKdxMCiJ0KbbkXuwdKRE56uT0awiLloeKnk3GT29OjYOUJdEVEAv4r\nqyxbPJNXv8qifYFnciYiXvs3+krjmEQ0ZctJHbOcXf4Bj38HOoN+abE1iWTHvZRl\n1rgyMcOFKSG/bIEjsru8q88=\n-----END PRIVATE KEY-----\n",
+  "client_email": "quiz-service-bot@deep-personality-quiz-api.iam.gserviceaccount.com",
+  "client_id": "105633405508466162342",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/quiz-service-bot%40deep-personality-quiz-api.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

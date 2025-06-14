@@ -1,3 +1,4 @@
+pip install streamlit gspread google-auth Pillow
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io

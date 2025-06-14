@@ -224,3 +224,14 @@ if st.session_state.submitted:
         mime="image/png"
     )
 pip install gspread oauth2client
+def log_to_google_sheets(data_dict):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("your_key_file.json", scope)
+    client = gspread.authorize(creds)
+
+    # Open the sheet (replace with your actual sheet name)
+    sheet = client.open("Deep Personality Data").sheet1
+
+    # Convert the dictionary to a list of values (order must match the header)
+    row = [data_dict.get(key, "") for key in sheet.row_values(1)]
+    sheet.append_row(row)

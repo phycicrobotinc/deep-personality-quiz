@@ -6,13 +6,13 @@ import io
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 if "answers" not in st.session_state:
-    st.session_state.answers = {}
+    st.session_state.answers = {q: None for q in range(1, 21)}  # Initialize all answers as None
 if "username" not in st.session_state:
     st.session_state.username = ""
 if "reset_requested" not in st.session_state:
     st.session_state.reset_requested = False
 
-# ---------------------- QUESTIONS & OPTIONS ----------------------
+# ---------------------- QUESTIONS ----------------------
 questions = {
     1: "What is your gender?",
     2: "What is your age group?",
@@ -61,8 +61,8 @@ options = {
 
 # ---------------------- ANALYZE PERSONALITY ----------------------
 def analyze_personality(answers):
-    red_count = sum(1 for q in answers if answers[q] == "R")
-    black_count = sum(1 for q in answers if answers[q] == "B")
+    red_count = sum(1 for q in answers if answers[q] == "Red")
+    black_count = sum(1 for q in answers if answers[q] == "Black")
 
     traits = []
     if red_count > black_count:
@@ -72,13 +72,13 @@ def analyze_personality(answers):
     else:
         traits.append("balanced")
 
-    if answers.get(7) == "A":
+    if answers.get(7) == "Introverted":
         traits.append("introspective")
-    if answers.get(8) == "A":
+    if answers.get(8) == "Love new experiences":
         traits.append("curious")
-    if answers.get(13) == "A":
+    if answers.get(13) == "Spontaneous":
         traits.append("spontaneous")
-    if answers.get(14) == "A":
+    if answers.get(14) == "Often":
         traits.append("goal-oriented")
 
     if "bold" in traits and "curious" in traits:
@@ -93,83 +93,67 @@ def analyze_personality(answers):
     description = f"You are a {personality}! This means you're {', '.join(traits)}."
     return personality, description
 
-# ---------------------- CERTIFICATE GENERATOR ----------------------
-def generate_certificate(username, personality):
-    width, height = 800, 600
-    cert = Image.new("RGB", (width, height), color=(255, 255, 255))
-    draw = ImageDraw.Draw(cert)
-
-    try:
-        title_font = ImageFont.truetype("arial.ttf", 40)
-        text_font = ImageFont.truetype("arial.ttf", 24)
-    except IOError:
-        title_font = text_font = ImageFont.load_default()
-
-    draw.text((width // 2 - 180, 80), "Deep Personality Quiz", font=title_font, fill="black")
-    draw.text((width // 2 - 150, 200), f"Congratulations, {username}!", font=text_font, fill="black")
-    draw.text((width // 2 - 200, 300), f"Your personality type is: {personality}", font=text_font, fill="black")
-
-    buffer = io.BytesIO()
-    cert.save(buffer, format="PNG")
-    buffer.seek(0)
-    return buffer
-
-# ---------------------- STREAMLIT UI ----------------------
+# ---------------------- APP LAYOUT ----------------------
 st.title("🧠 Deep Personality Quiz")
 
-# Reset if requested
-if st.session_state.reset_requested:
-    st.session_state.answers = {}
+# Reset button
+if st.button("Reset Quiz"):
     st.session_state.submitted = False
+    st.session_state.answers = {q: None for q in range(1, 21)}
     st.session_state.username = ""
-    st.session_state.reset_requested = False
-    st.experimental_rerun()
 
-# Get user name
-if not st.session_state.username:
-    st.session_state.username = st.text_input("Enter your name to begin:")
+# Username input (reset on Reset Quiz)
+st.session_state.username = st.text_input("Enter your name:", value=st.session_state.username)
 
-# Show the quiz if username entered
-if st.session_state.username:
-    for q_num, q_text in questions.items():
-        if q_num not in st.session_state.answers:
-            st.session_state.answers[q_num] = None
-        st.session_state.answers[q_num] = st.radio(
-            q_text,
-            list(options[q_num].values()),
-            index=-1,
-            key=f"q{q_num}"
-        )
+# Display questions only if username entered
+if st.session_state.username.strip() == "":
+    st.info("Please enter your name to start the quiz.")
+    st.stop()
 
-    all_answered = all(st.session_state.answers[q] is not None for q in questions)
+# Display questions with placeholder option
+for q_num, q_text in questions.items():
+    options_list = ["-- Select an option --"] + list(options[q_num].values())
+    current_answer = st.session_state.answers.get(q_num)
 
-    if st.button("Finish Quiz") and all_answered:
-        st.session_state.submitted = True
+    if current_answer in options_list:
+        selected_index = options_list.index(current_answer)
+    else:
+        selected_index = 0  # placeholder selected
 
-    if not all_answered:
-        st.warning("Please answer all the questions before submitting.")
-
-# ---------------------- SHOW RESULTS ----------------------
-if st.session_state.submitted:
-    reverse_answers = {}
-    for q, answer in st.session_state.answers.items():
-        for key, val in options[q].items():
-            if val == answer:
-                reverse_answers[q] = key
-
-    personality, description = analyze_personality(reverse_answers)
-    st.success(description)
-
-    cert = generate_certificate(st.session_state.username, personality)
-    st.image(cert, caption="Your Certificate", use_column_width=True)
-
-    st.download_button(
-        label="Download Your Certificate",
-        data=cert,
-        file_name=f"{st.session_state.username}_certificate.png",
-        mime="image/png"
+    answer = st.radio(
+        q_text,
+        options_list,
+        index=selected_index,
+        key=f"q{q_num}"
     )
 
-    if st.button("Retake Test"):
-        st.session_state.reset_requested = True
-        st.experimental_rerun()
+    if answer == "-- Select an option --":
+        st.session_state.answers[q_num] = None
+    else:
+        st.session_state.answers[q_num] = answer
+
+# Check if all questions answered
+all_answered = all(ans is not None for ans in st.session_state.answers.values())
+
+if st.button("Submit Quiz"):
+    if not all_answered:
+        st.warning("Please answer all questions before submitting.")
+    else:
+        st.session_state.submitted = True
+
+# Show results if submitted
+if st.session_state.submitted:
+    personality, description = analyze_personality(st.session_state.answers)
+    st.header(f"Results for {st.session_state.username}")
+    st.write(description)
+
+    # Simple certificate generation (optional)
+    img = Image.new('RGB', (400, 200), color=(255, 255, 255))
+    d = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+    d.text((10, 50), f"Certificate of Personality", font=font, fill=(0, 0, 0))
+    d.text((10, 90), f"{st.session_state.username} is a {personality}", font=font, fill=(0, 0, 0))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    byte_im = buf.getvalue()
+    st.image(byte_im)

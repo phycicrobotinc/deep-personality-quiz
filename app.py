@@ -1,34 +1,34 @@
-import os
-import json
-import random
 import streamlit as st
+import json, random, os
+from PIL import Image, ImageDraw, ImageFont
 
-# Setup data folder and file for profiles (adjust path if needed)
-DATA_FOLDER = "PersonalityQuizData"
-os.makedirs(DATA_FOLDER, exist_ok=True)
-PROFILES_FILE = os.path.join(DATA_FOLDER, "deep_profiles.json")
+# == FILE PATH ==
+PROFILES_FILE = "deep_profiles.json"
 
-# Load or create reference profiles
-if os.path.exists(PROFILES_FILE):
-    with open(PROFILES_FILE, "r") as f:
-        reference_profiles = json.load(f)
-else:
-    reference_profiles = {
-        "Thinker": {
-            "Q1": "B","Q2": "A","Q3": "B","Q4": "A","Q5": "C",
-            "Q6": "B","Q7": "D","Q8": "A","Q9": "C",
-            "Q10":"R","Q11":"B","Q12":"R","Q13":"B","Q14":"R","Q15":"R"
-        },
-        "Adventurer": {
-            "Q1": "C","Q2": "B","Q3": "C","Q4": "D","Q5": "A",
-            "Q6": "D","Q7": "A","Q8": "C","Q9": "B",
-            "Q10":"B","Q11":"R","Q12":"B","Q13":"R","Q14":"B","Q15":"B"
-        }
-    }
-    with open(PROFILES_FILE, "w") as f:
-        json.dump(reference_profiles, f, indent=2)
+# == PERSONALITY PROFILES ==
+reference_profiles = {
+    "Thinker":     {"Q1": "B", "Q2": "B", "Q3": "A", "Q4": "B", "Q5": "B", "Q6": "B", "Q7": "B", "Q8": "A", "Q9": "A", "Q10": "R", "Q11": "B", "Q12": "R", "Q13": "B", "Q14": "R", "Q15": "B"},
+    "Adventurer": {"Q1": "C", "Q2": "C", "Q3": "C", "Q4": "C", "Q5": "C", "Q6": "C", "Q7": "C", "Q8": "C", "Q9": "C", "Q10": "B", "Q11": "R", "Q12": "B", "Q13": "R", "Q14": "B", "Q15": "R"},
+    "Empath":     {"Q1": "A", "Q2": "D", "Q3": "D", "Q4": "A", "Q5": "D", "Q6": "D", "Q7": "A", "Q8": "B", "Q9": "B", "Q10": "R", "Q11": "R", "Q12": "R", "Q13": "R", "Q14": "B", "Q15": "B"},
+    "Innovator":  {"Q1": "D", "Q2": "C", "Q3": "B", "Q4": "D", "Q5": "A", "Q6": "A", "Q7": "D", "Q8": "D", "Q9": "D", "Q10": "B", "Q11": "B", "Q12": "B", "Q13": "R", "Q14": "R", "Q15": "B"},
+    "Leader":     {"Q1": "B", "Q2": "A", "Q3": "D", "Q4": "D", "Q5": "A", "Q6": "A", "Q7": "D", "Q8": "D", "Q9": "D", "Q10": "B", "Q11": "B", "Q12": "R", "Q13": "B", "Q14": "R", "Q15": "B"},
+    "Visionary":  {"Q1": "D", "Q2": "C", "Q3": "B", "Q4": "B", "Q5": "C", "Q6": "D", "Q7": "C", "Q8": "B", "Q9": "B", "Q10": "R", "Q11": "R", "Q12": "B", "Q13": "B", "Q14": "R", "Q15": "R"},
+    "Analyst":    {"Q1": "B", "Q2": "B", "Q3": "A", "Q4": "B", "Q5": "A", "Q6": "B", "Q7": "B", "Q8": "A", "Q9": "A", "Q10": "B", "Q11": "B", "Q12": "R", "Q13": "B", "Q14": "B", "Q15": "B"},
+    "Seeker":     {"Q1": "C", "Q2": "C", "Q3": "C", "Q4": "C", "Q5": "C", "Q6": "C", "Q7": "A", "Q8": "C", "Q9": "C", "Q10": "R", "Q11": "R", "Q12": "R", "Q13": "R", "Q14": "R", "Q15": "R"},
+}
 
-# Questions & Options
+profile_descriptions = {
+    "Thinker": "🧠 You are methodical, rational, and logical. You think before acting and value clarity.",
+    "Adventurer": "✈️ You thrive on spontaneity and exploration. Challenges excite you.",
+    "Empath": "💖 You understand emotions deeply and connect well with others.",
+    "Innovator": "💡 You love to create and solve problems in new ways.",
+    "Leader": "🧭 You are confident, assertive, and naturally take charge.",
+    "Visionary": "🌌 You dream big, think creatively, and pursue purpose.",
+    "Analyst": "📊 You value precision, analysis, and strategic thinking.",
+    "Seeker": "🌿 You are introspective, curious, and always searching for meaning."
+}
+
+# == QUESTIONS & OPTIONS ==
 questions = {
     "Q1":"How do you make decisions?",
     "Q2":"How do you handle failure?",
@@ -39,101 +39,65 @@ questions = {
     "Q7":"How do you react to conflict?",
     "Q8":"Which sounds more like you?",
     "Q9":"What’s your approach to goals?",
-    "Q10":"Red or Black?",
-    "Q11":"Red or Black?",
-    "Q12":"Red or Black?",
-    "Q13":"Red or Black?",
-    "Q14":"Red or Black?",
-    "Q15":"Red or Black?"
+    **{f"Q{i}":"Red or Black?" for i in range(10, 16)}
 }
 
 options = {
-    "Q1": {"A": "🧠 Emotional", "B": "📊 Logical", "C": "⚡ Impulsive", "D": "👥 Social"},
-    "Q2": {"A": "🤫 Withdraw and reflect", "B": "📝 Plan better", "C": "🔄 Try again differently", "D": "🗣️ Talk it out"},
-    "Q3": {"A": "📚 Reading alone", "B": "🧪 Learning a skill", "C": "✈️ Spontaneous trip", "D": "🎉 Party or gathering"},
-    "Q4": {"A": "📋 Organizer", "B": "🧠 Strategist", "C": "🌀 Wild card", "D": "🧭 Leader"},
-    "Q5": {"A": "📈 Calculated risks", "B": "🛑 Avoid risks", "C": "🎢 Chase thrill", "D": "🌀 Depends on mood"},
-    "Q6": {"A": "📐 Structured", "B": "📊 Analytical", "C": "🌊 Flexible", "D": "🌌 Abstract"},
-    "Q7": {"A": "🚪 Avoid", "B": "🤝 Negotiate", "C": "⚔️ Challenge", "D": "🧘 Calm and listen"},
-    "Q8": {"A": "🗂️ Planned", "B": "💓 Emotional", "C": "🌈 Free-spirited", "D": "🏁 Driven"},
-    "Q9": {"A": "📋 Lists", "B": "💭 Dream big", "C": "🔁 Adapt", "D": "🎯 Visualize and go"},
-    "Q10": {"R": "🔴 Red", "B": "⚫ Black"},
-    "Q11": {"R": "🔴 Red", "B": "⚫ Black"},
-    "Q12": {"R": "🔴 Red", "B": "⚫ Black"},
-    "Q13": {"R": "🔴 Red", "B": "⚫ Black"},
-    "Q14": {"R": "🔴 Red", "B": "⚫ Black"},
-    "Q15": {"R": "🔴 Red", "B": "⚫ Black"},
+    "Q1": {"A": "Emotional", "B": "Logical", "C": "Impulsive", "D": "Social"},
+    "Q2": {"A": "Withdraw", "B": "Plan better", "C": "Try again", "D": "Talk it out"},
+    "Q3": {"A": "Reading", "B": "Learning", "C": "Adventure", "D": "Party"},
+    "Q4": {"A": "Organizer", "B": "Strategist", "C": "Wild card", "D": "Leader"},
+    "Q5": {"A": "Calculated", "B": "Avoid", "C": "Thrill", "D": "Mood based"},
+    "Q6": {"A": "Structured", "B": "Analytical", "C": "Flexible", "D": "Abstract"},
+    "Q7": {"A": "Avoid", "B": "Negotiate", "C": "Challenge", "D": "Listen"},
+    "Q8": {"A": "Planned", "B": "Emotional", "C": "Free", "D": "Driven"},
+    "Q9": {"A": "Lists", "B": "Dream", "C": "Adapt", "D": "Visualize"},
+    **{f"Q{i}": {"R": "Red", "B": "Black"} for i in range(10, 16)}
 }
 
-# Profile descriptions for all profiles including generic for new users
-profile_descriptions = {
-    "Thinker": """You are methodical and rational.
-You analyze every decision, weigh pros and cons,
-and value logic over emotion.""",
-    "Adventurer": """You crave excitement and novelty.
-Spontaneity and challenge fuel your spirit,
-and you thrive on exploring the unknown.""",
-}
+# == FUNCTIONS ==
+def match_percent(p, ua):
+    matches = sum(p[q] == ua[q] for q in p)
+    return round(100 * matches / len(p), 1)
 
-# For user profiles that are new and saved later
-def get_profile_description(name):
-    return profile_descriptions.get(name, 
-        "You have a unique combination of traits.\n"
-        "Explore yourself and maybe share your results to enrich our profiles!")
+def generate_certificate(name, personality, percent):
+    emoji = profile_descriptions[personality].split()[0]  # first emoji
+    cert = Image.new("RGB", (700, 400), color="#f0f0f0")
+    draw = ImageDraw.Draw(cert)
+    title_font = ImageFont.load_default()
+    
+    draw.rectangle([0, 0, 700, 70], fill="#3366cc")
+    draw.text((20, 20), f"🎓 Deep Personality Certificate", fill="white", font=title_font)
+    draw.text((30, 100), f"Name: {name}", fill="black", font=title_font)
+    draw.text((30, 150), f"Personality: {personality} {emoji}", fill="black", font=title_font)
+    draw.text((30, 200), f"Match: {percent}%", fill="black", font=title_font)
+    return cert
 
-# Calculate match %
-def match_percent(profile, user_answers):
-    matches = sum(profile.get(q) == user_answers.get(q) for q in profile)
-    return round(100 * matches / len(profile), 1)
+# == STREAMLIT APP ==
+st.set_page_config(page_title="Deep Personality Quiz")
+st.title("🌟 Deep Personality Quiz")
 
-# Save new user profile if unique
-def save_profile(user_answers):
-    # Avoid duplicate
-    if user_answers in reference_profiles.values():
-        return None
-    i = 1
-    while f"UserProfile_{i}" in reference_profiles:
-        i += 1
-    name = f"UserProfile_{i}"
-    reference_profiles[name] = user_answers
-    with open(PROFILES_FILE, "w") as f:
-        json.dump(reference_profiles, f, indent=2)
-    return name
+username = st.text_input("Enter your name to begin:")
 
-# Streamlit UI
-def main():
-    st.title("🌟 Deep Personality Quiz 🌟")
-    st.write("Answer the questions below:")
+if username:
+    if st.button("Start Quiz"):
+        user_answers = {}
+        for qid, qtext in questions.items():
+            answer = st.radio(f"{qtext}", list(options[qid].keys()), format_func=lambda x: options[qid][x], key=qid)
+            user_answers[qid] = answer
 
-    user_answers = {}
+        best, score = max(
+            ((name, match_percent(p, user_answers)) for name, p in reference_profiles.items()),
+            key=lambda x: x[1]
+        )
 
-    for qid, qtext in questions.items():
-        opts = options[qid]
-        choice = st.radio(f"{qtext}", list(opts.values()), key=qid)
-        # Reverse lookup: get key from value
-        selected_key = next(k for k, v in opts.items() if v == choice)
-        user_answers[qid] = selected_key
+        st.success(f"🎯 You are a {best}! ({score}% match)")
+        st.markdown(profile_descriptions[best])
 
-    if st.button("Submit"):
-        # Find best match profile
-        best_name = None
-        best_score = -1
-        for prof_name, prof_answers in reference_profiles.items():
-            score = match_percent(prof_answers, user_answers)
-            if score > best_score:
-                best_score = score
-                best_name = prof_name
-        
-        st.markdown("---")
-        st.subheader(f"🎯 Best Match: {best_name} ({best_score}%)")
-        st.write(get_profile_description(best_name))
+        cert = generate_certificate(username, best, score)
+        st.image(cert, caption="📜 Your Personality Certificate")
 
-        # Save user profile if new
-        saved_name = save_profile(user_answers)
-        if saved_name:
-            st.success(f"💾 Your unique profile was saved as {saved_name}")
-        else:
-            st.info("Your profile matches an existing one, so it was not saved again.")
-
-if __name__ == "__main__":
-    main()
+        from io import BytesIO
+        buf = BytesIO()
+        cert.save(buf, format="PNG")
+        st.download_button("📥 Download Certificate", data=buf.getvalue(), file_name="personality_certificate.png", mime="image/png")

@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 
 # Initialize session state variables if not present
 if "submitted" not in st.session_state:
@@ -8,8 +9,8 @@ if "answers" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# Questions dictionary
-questions = {
+# Original questions without red/black
+base_questions = {
     "Q1": "What is your gender?",
     "Q2": "What is your age group?",
     "Q3": "What is your current employment status?",
@@ -19,18 +20,22 @@ questions = {
     "Q7": "How important is financial security to you?",
     "Q8": "Do you enjoy trying new experiences?",
     "Q9": "Are you more analytical or creative?",
-    "Q10": "Do you prefer red or black? (Final 6 questions start here)",
-    "Q11": "Red or black?",
-    "Q12": "Red or black?",
-    "Q13": "Red or black?",
-    "Q14": "Red or black?",
-    "Q15": "Red or black?",
     "Q16": "Do you prefer working alone or in a team?",
     "Q17": "Are you more spontaneous or planned?",
     "Q18": "How often do you set long-term goals?",
 }
 
-# Options dictionary for each question
+# Red/Black questions (answers only R or B)
+red_black_questions = {
+    "Q10": "Do you prefer red or black?",
+    "Q11": "Red or black?",
+    "Q12": "Red or black?",
+    "Q13": "Red or black?",
+    "Q14": "Red or black?",
+    "Q15": "Red or black?",
+}
+
+# Options dictionary
 options = {
     "Q1": {"A": "Male", "B": "Female", "C": "Other", "D": "Prefer not to say"},
     "Q2": {"A": "Under 18", "B": "18-24", "C": "25-34", "D": "35-44", "E": "45+"},
@@ -52,10 +57,20 @@ options = {
     "Q18": {"A": "Often", "B": "Sometimes", "C": "Rarely"},
 }
 
-# Personality analysis function
+# Combine and shuffle question keys so red/black are mixed
+def get_shuffled_questions():
+    # List all question keys
+    all_questions = list(base_questions.items()) + list(red_black_questions.items())
+    # Shuffle the combined list to mix red/black questions
+    random.shuffle(all_questions)
+    return dict(all_questions)
+
+questions = get_shuffled_questions()
+
+# Personality analysis function remains the same
 def analyze_personality(answers):
-    red_count = sum(1 for q in ["Q10","Q11","Q12","Q13","Q14","Q15"] if answers.get(q) == "R")
-    black_count = 6 - red_count
+    red_count = sum(1 for q in red_black_questions if answers.get(q) == "R")
+    black_count = len(red_black_questions) - red_count
     gender = options["Q1"].get(answers.get("Q1"), "Unknown")
 
     if red_count > black_count:
@@ -77,7 +92,7 @@ def show_certificate():
     </div>
     """, unsafe_allow_html=True)
 
-# Main app flow
+# Main app
 st.title("Deep Personality Quiz")
 
 if not st.session_state.submitted:
@@ -86,7 +101,7 @@ if not st.session_state.submitted:
     if st.session_state.username.strip() != "":
         st.write(f"Welcome, {st.session_state.username}! Please answer the following questions:")
 
-        # Display questions and collect answers
+        # Show shuffled questions
         for qid, question in questions.items():
             opts = options[qid]
             choice = st.radio(question, list(opts.keys()), format_func=lambda x: opts[x], key=qid)
@@ -97,16 +112,13 @@ if not st.session_state.submitted:
                 st.session_state.submitted = True
             else:
                 st.warning("Please answer all questions before submitting.")
-
 else:
-    # Show result and certificate after submission
     st.success("Quiz Completed!")
     result = analyze_personality(st.session_state.answers)
     st.write(result)
     show_certificate()
 
     if st.button("Retake Quiz"):
-        # Reset all states
         st.session_state.submitted = False
         st.session_state.answers = {}
         st.session_state.username = ""

@@ -1,4 +1,12 @@
-pip install streamlit gspread google-auth Pillow
+# pip install streamlit gspread google-auth Pillow  
+
+import streamlit as st
+from PIL import Image, ImageDraw, ImageFont
+import io
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io

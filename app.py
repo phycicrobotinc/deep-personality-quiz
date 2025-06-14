@@ -1,6 +1,6 @@
 import streamlit as st
 
-# Initialize session state variables if not present
+# Initialize session state variables once
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 if "answers" not in st.session_state:
@@ -8,120 +8,133 @@ if "answers" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# Questions with red/black questions spaced every 3 questions
+# Questions with Red/Black spaced every 3 questions
+questions_order = [
+    "Q1", "Q2", "Q3", "Q4",  # Red/Black Q4
+    "Q5", "Q6", "Q7",        # Red/Black Q7
+    "Q8", "Q9", "Q10",       # Red/Black Q10
+    "Q11", "Q12", "Q13",     # Red/Black Q13
+    "Q14", "Q15", "Q16",     # Red/Black Q16
+    "Q17", "Q18"             # Red/Black Q18
+]
+
 questions = {
     "Q1": "What is your gender?",
     "Q2": "What is your age group?",
     "Q3": "What is your current employment status?",
-    "Q4": "Do you prefer red or black? (Red/Black question #1)",
+    "Q4": "Do you prefer red or black? (Question 1)",
     "Q5": "What is your approximate annual income?",
     "Q6": "How do you prefer to spend your free time?",
-    "Q7": "Do you prefer red or black? (Red/Black question #2)",
+    "Q7": "Do you prefer red or black? (Question 2)",
     "Q8": "Do you consider yourself more introverted or extroverted?",
     "Q9": "How important is financial security to you?",
-    "Q10": "Do you prefer red or black? (Red/Black question #3)",
+    "Q10": "Do you prefer red or black? (Question 3)",
     "Q11": "Do you enjoy trying new experiences?",
     "Q12": "Are you more analytical or creative?",
-    "Q13": "Do you prefer red or black? (Red/Black question #4)",
+    "Q13": "Do you prefer red or black? (Question 4)",
     "Q14": "Do you prefer working alone or in a team?",
     "Q15": "Are you more spontaneous or planned?",
-    "Q16": "Do you prefer red or black? (Red/Black question #5)",
+    "Q16": "Do you prefer red or black? (Question 5)",
     "Q17": "How often do you set long-term goals?",
-    "Q18": "Do you prefer red or black? (Red/Black question #6)",
+    "Q18": "Do you prefer red or black? (Question 6)",
 }
 
-# Options for each question
 options = {
-    "Q1": {"A": "Male", "B": "Female", "C": "Other", "D": "Prefer not to say"},
-    "Q2": {"A": "Under 18", "B": "18-24", "C": "25-34", "D": "35-44", "E": "45+"},
-    "Q3": {"A": "Employed full-time", "B": "Employed part-time", "C": "Student", "D": "Unemployed", "E": "Retired"},
-    "Q4": {"R": "Red", "B": "Black"},
-    "Q5": {"A": "<$20,000", "B": "$20,000-$50,000", "C": "$50,001-$100,000", "D": ">$100,000"},
-    "Q6": {"A": "Reading or relaxing", "B": "Sports or outdoor activities", "C": "Socializing", "D": "Creative hobbies"},
-    "Q7": {"R": "Red", "B": "Black"},
-    "Q8": {"A": "Introverted", "B": "Extroverted"},
-    "Q9": {"A": "Very important", "B": "Somewhat important", "C": "Not important"},
-    "Q10": {"R": "Red", "B": "Black"},
-    "Q11": {"A": "Yes, I love new experiences", "B": "Sometimes", "C": "Rarely"},
-    "Q12": {"A": "Analytical", "B": "Creative", "C": "Balanced"},
-    "Q13": {"R": "Red", "B": "Black"},
-    "Q14": {"A": "Alone", "B": "Team"},
-    "Q15": {"A": "Spontaneous", "B": "Planned"},
-    "Q16": {"R": "Red", "B": "Black"},
-    "Q17": {"A": "Often", "B": "Sometimes", "C": "Rarely"},
-    "Q18": {"R": "Red", "B": "Black"},
+    "Q1": ["Male", "Female", "Other", "Prefer not to say"],
+    "Q2": ["Under 18", "18-24", "25-34", "35-44", "45+"],
+    "Q3": ["Employed full-time", "Employed part-time", "Student", "Unemployed", "Retired"],
+    "Q4": ["Red", "Black"],
+    "Q5": ["<$20,000", "$20,000-$50,000", "$50,001-$100,000", ">$100,000"],
+    "Q6": ["Reading or relaxing", "Sports or outdoor activities", "Socializing", "Creative hobbies"],
+    "Q7": ["Red", "Black"],
+    "Q8": ["Introverted", "Extroverted"],
+    "Q9": ["Very important", "Somewhat important", "Not important"],
+    "Q10": ["Red", "Black"],
+    "Q11": ["Yes, I love new experiences", "Sometimes", "Rarely"],
+    "Q12": ["Analytical", "Creative", "Balanced"],
+    "Q13": ["Red", "Black"],
+    "Q14": ["Alone", "Team"],
+    "Q15": ["Spontaneous", "Planned"],
+    "Q16": ["Red", "Black"],
+    "Q17": ["Often", "Sometimes", "Rarely"],
+    "Q18": ["Red", "Black"],
 }
 
-# Personality analysis logic
 def analyze_personality(answers):
-    red_count = sum(1 for q in ["Q4","Q7","Q10","Q13","Q16","Q18"] if answers.get(q) == "R")
-    black_count = 6 - red_count
+    # Count how many reds and blacks
+    red_questions = ["Q4", "Q7", "Q10", "Q13", "Q16", "Q18"]
+    red_count = sum(1 for q in red_questions if answers.get(q) == "Red")
+    black_count = len(red_questions) - red_count
+
     gender = answers.get("Q1", "Unknown")
+    age = answers.get("Q2", "Unknown")
+    employment = answers.get("Q3", "Unknown")
 
+    personality_desc = ""
     if red_count > black_count:
-        personality = "You are adventurous and bold."
+        personality_desc = "You are adventurous, bold, and take risks."
     elif black_count > red_count:
-        personality = "You are calm and thoughtful."
+        personality_desc = "You are calm, thoughtful, and prefer stability."
     else:
-        personality = "You have a balanced personality."
+        personality_desc = "You have a balanced personality with a mix of boldness and calm."
 
-    return f"Hello {st.session_state.username}! {personality} Your gender is recorded as: {gender}."
+    extra = f"\n\nGender: {gender}\nAge group: {age}\nEmployment status: {employment}"
 
-# App title
+    return personality_desc + extra
+
 st.title("Deep Personality Quiz")
 
 if not st.session_state.submitted:
     # Input username
     username = st.text_input("Please enter your name:", value=st.session_state.username, key="username")
 
-    # Update username in session state if changed
-    if username and username != st.session_state.username:
+    if username:
         st.session_state.username = username
 
-    if username:
-        st.markdown("### Please answer all questions:")
-        # Show questions with placeholder
+        st.markdown("### Please answer all the questions below:")
+
         all_answered = True
-        placeholder = "-- Select an option --"
-        for qid, qtext in questions.items():
+        for qid in questions_order:
+            qtext = questions[qid]
             opts = options[qid]
-            select_options = [placeholder] + [opts[k] for k in opts]
-            # Get stored answer or placeholder
-            stored_answer = st.session_state.answers.get(qid, placeholder)
-            # Determine index to show selected answer or placeholder
-            index = 0
-            if stored_answer in select_options:
-                index = select_options.index(stored_answer)
-            answer = st.selectbox(qtext, select_options, index=index, key=qid)
-            if answer == placeholder:
+
+            # Get previously selected answer or None
+            prev_answer = st.session_state.answers.get(qid, None)
+
+            # Use selectbox with no default selection (index -1 not allowed, so trick: add dummy option)
+            choice = st.selectbox(qtext, ["-- Select an option --"] + opts, index=0, key=qid)
+
+            if choice == "-- Select an option --":
                 all_answered = False
-                # Remove any old answer
+                # Remove old answer if any
                 if qid in st.session_state.answers:
                     del st.session_state.answers[qid]
             else:
-                st.session_state.answers[qid] = answer
+                st.session_state.answers[qid] = choice
 
-        # Only allow submission if all answered
-        if all_answered:
+        if not all_answered:
+            st.warning("Please answer all questions to enable submission.")
+        else:
             if st.button("Submit"):
                 st.session_state.submitted = True
-        else:
-            st.warning("Please answer all questions before submitting.")
+                st.experimental_rerun()
 
 else:
-    # Show personality result
-    result = analyze_personality(st.session_state.answers)
-    st.success(result)
+    # Show results
+    st.success(f"Thank you for completing the quiz, {st.session_state.username}!")
+    result_text = analyze_personality(st.session_state.answers)
+    st.write(result_text)
 
-    # Show certificate (simple version)
+    # Simple certificate
     st.markdown("---")
     st.markdown(f"""
     ### Certificate of Completion
 
     This certifies that **{st.session_state.username}** has completed the Deep Personality Quiz.
 
-    **Result:** {result}
+    **Personality Summary:** {result_text}
     """)
+
     if st.button("Retake Quiz"):
         st.session_state.submitted = False
         st.session_state.answers = {}

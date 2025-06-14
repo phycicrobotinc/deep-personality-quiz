@@ -136,4 +136,5 @@ else:
     st.markdown("---")
     st.markdown("### Certificate of Completion")
     buf = generate_certificate(st.session_state.username, personality)
-    st.image(buf, caption="Right-click to save your certificate.")st.write("Loaded correctly")  # Add at the top
+    st.image(buf, caption="Right-click to save your certificate.")
+st.write("Loaded correctly")  # Add at the top

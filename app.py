@@ -100,40 +100,4 @@ def generate_certificate(name, personality):
         font = ImageFont.load_default()
     d.text((30, 50), f"Certificate of Completion", fill=(0, 0, 0), font=font)
     d.text((30, 120), f"Awarded to: {name}", fill=(0, 0, 0), font=font)
-    d.text((30, 160), f"Personality: {personality}", fill=(0, 0, 0), font=font)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return buf
-
-# ---------------------- UI ----------------------
-st.title("🧠 Deep Personality Quiz")
-
-if not st.session_state.submitted:
-    username = st.text_input("Enter your name to begin:", value=st.session_state.username)
-    if username:
-        st.session_state.username = username
-
-        for key in questions:
-            if key not in st.session_state.answers:
-                st.session_state.answers[key] = None
-
-            answer = st.radio(questions[key], list(options[key].values()), index=-1, key=key)
-            for k, v in options[key].items():
-                if v == answer:
-                    st.session_state.answers[key] = k
-
-        if st.button("Submit"):
-            if all(st.session_state.answers.values()):
-                st.session_state.submitted = True
-            else:
-                st.warning("Please answer all questions.")
-else:
-    st.success(f"Thanks for completing the quiz, {st.session_state.username}!")
-    personality, description = analyze_personality(st.session_state.answers)
-    st.markdown(f"### Your Personality Type: {personality}")
-    st.write(description)
-
-    st.markdown("---")
-    st.markdown("### Certificate of Completion")
-    buf = generate_certificate(st.session_state.username, personality)
-    st.image(buf, caption="Right-click to save your certificate.")
+    d

@@ -9,8 +9,6 @@ if "answers" not in st.session_state:
     st.session_state.answers = {}
 if "username" not in st.session_state:
     st.session_state.username = ""
-if "reset_requested" not in st.session_state:
-    st.session_state.reset_requested = False
 
 # ---------------------- QUESTIONS ----------------------
 questions = {
@@ -93,7 +91,7 @@ def analyze_personality(answers):
     description = f"You are a {personality}! This means you're {', '.join(traits)}."
     return personality, description
 
-# ---------------------- CERTIFICATE GENERATION ----------------------
+# ---------------------- CERTIFICATE ----------------------
 def generate_certificate(name, personality, description):
     width, height = 900, 600
     background_color = (255, 248, 220)  # light cream
@@ -122,17 +120,23 @@ def generate_certificate(name, personality, description):
 
     # Title
     title_text = "Certificate of Personality"
-    w, h = draw.textsize(title_text, font=title_font)
+    bbox = draw.textbbox((0,0), title_text, font=title_font)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
     draw.text(((width - w) / 2, 60), title_text, fill=border_color, font=title_font)
 
     # Recipient
     name_text = f"Presented to: {name}"
-    w, h = draw.textsize(name_text, font=subtitle_font)
+    bbox = draw.textbbox((0,0), name_text, font=subtitle_font)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
     draw.text(((width - w) / 2, 160), name_text, fill="black", font=subtitle_font)
 
     # Personality
     personality_text = f"Personality Type: {personality}"
-    w, h = draw.textsize(personality_text, font=subtitle_font)
+    bbox = draw.textbbox((0,0), personality_text, font=subtitle_font)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
     draw.text(((width - w) / 2, 220), personality_text, fill="black", font=subtitle_font)
 
     # Description block (wrap text)
@@ -142,7 +146,8 @@ def generate_certificate(name, personality, description):
         line = ""
         for word in words:
             test_line = line + word + " "
-            w, _ = draw_obj.textsize(test_line, font=font)
+            bbox = draw_obj.textbbox((0,0), test_line, font=font)
+            w = bbox[2] - bbox[0]
             if w <= max_width:
                 line = test_line
             else:
@@ -153,7 +158,9 @@ def generate_certificate(name, personality, description):
         y = pos[1]
         for line in lines:
             draw_obj.text((pos[0], y), line.strip(), font=font, fill=fill)
-            y += font.getsize(line)[1] + 5
+            bbox = draw_obj.textbbox((0,0), line.strip(), font=font)
+            h = bbox[3] - bbox[1]
+            y += h + 5
 
     description_text = description
     draw_multiline_text(draw, description_text, (70, 280), body_font, width - 140, fill="black")
@@ -162,90 +169,77 @@ def generate_certificate(name, personality, description):
     sig_y = height - 100
     draw.line((width - 300, sig_y, width - 100, sig_y), fill=border_color, width=3)
     sig_text = "Signature"
-    w, h = draw.textsize(sig_text, font=body_font)
+    bbox = draw.textbbox((0,0), sig_text, font=body_font)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
     draw.text((width - 200 - w / 2, sig_y + 10), sig_text, fill="black", font=body_font)
 
     return image
-
-# ---------------------- APP UI ----------------------
+# ---------------------- UI & LOGIC ----------------------
 st.title("🧠 Deep Personality Quiz")
 
 if not st.session_state.username:
-    username = st.text_input("Enter your name to begin the quiz:")
-    if username.strip():
-        st.session_state.username = username.strip()
-        st.session_state.answers = {}  # reset answers on new username
-        st.session_state.submitted = False
-else:
-    st.write(f"Hello, **{st.session_state.username}**! Please answer the questions below:")
+    st.session_state.username = st.text_input("Enter your name to start:")
 
-    # Display questions
-    for q_num, q_text in questions.items():
+if st.session_state.username:
+    st.write(f"Welcome, **{st.session_state.username}**! Please answer the following questions:")
+
+    # Show questions
+    for q_num in sorted(questions.keys()):
+        q_text = questions[q_num]
         opts = options[q_num]
-        current_answer = st.session_state.answers.get(q_num, None)
-        # We pass the options values (displayed text) but store the keys (A, B, R, etc)
-        # But radio requires list of display values. We invert to get keys by value
-        # So for the radio buttons: the options shown are the option texts.
-        # But the value stored in answers should be the key.
-        # We'll store the selected key by matching the label clicked.
 
-        option_labels = list(opts.values())
+        # Prepare options list for radio buttons
         option_keys = list(opts.keys())
+        option_labels = [f"{key}: {opts[key]}" for key in option_keys]
 
-        # Set default to None if unanswered so radio starts empty
-        default_idx = None
-        if current_answer:
-            try:
-                default_idx = option_keys.index(current_answer)
-            except ValueError:
-                default_idx = None
+        # Get current answer if any
+        current_answer = st.session_state.answers.get(q_num, None)
 
+        # Show radio with proper keys to maintain state
         selected_label = st.radio(
-            q_text,
-            option_labels,
-            index=default_idx if default_idx is not None else 0 if current_answer else None,
-            key=f"q{q_num}",
-            horizontal=True,
+            label=q_text,
+            options=option_labels,
+            index=option_keys.index(current_answer) if current_answer in option_keys else 0,
+            key=f"q{q_num}"
         )
 
-        # Find selected key for this label
-        try:
-            selected_key = option_keys[option_labels.index(selected_label)]
-            st.session_state.answers[q_num] = selected_key
-        except Exception:
-            # No selection yet
-            if q_num in st.session_state.answers:
-                del st.session_state.answers[q_num]
+        # Extract selected key from label (e.g. "A: Male" -> "A")
+        selected_key = selected_label.split(":")[0]
+        st.session_state.answers[q_num] = selected_key
 
-    # Check all questions answered before allowing submit
-    if len(st.session_state.answers) == len(questions):
-        if st.button("Submit"):
+    # Check if all questions answered
+    all_answered = len(st.session_state.answers) == len(questions)
+    if all_answered:
+        if st.button("Submit Quiz"):
             st.session_state.submitted = True
     else:
-        st.info(f"Please answer all {len(questions)} questions to submit.")
+        st.info(f"Please answer all {len(questions)} questions before submitting.")
 
-# ---------------------- RESULTS ----------------------
+else:
+    st.info("Please enter your name to begin the quiz.")
+# ---------------------- RESULTS & CERTIFICATE ----------------------
 if st.session_state.submitted:
     personality, description = analyze_personality(st.session_state.answers)
+
     st.header("Your Personality Result")
+    st.markdown(f"### {personality}")
     st.write(description)
 
-    cert_image = generate_certificate(st.session_state.username, personality, description)
+    # Generate certificate image
+    cert_img = generate_certificate(st.session_state.username, personality, description)
 
+    # Display certificate
+    st.image(cert_img, caption="Your Personality Certificate", use_column_width=True)
+
+    # Prepare for download
     buf = io.BytesIO()
-    cert_image.save(buf, format="PNG")
+    cert_img.save(buf, format="PNG")
     byte_im = buf.getvalue()
 
-    st.image(cert_image, caption="Your Certificate", use_column_width=True)
     st.download_button(
-        "Download Certificate",
+        label="Download Certificate",
         data=byte_im,
-        file_name="personality_certificate.png",
+        file_name=f"{st.session_state.username}_personality_certificate.png",
         mime="image/png"
     )
-
-    if st.button("Reset Quiz"):
-        st.session_state.submitted = False
-        st.session_state.answers = {}
-        st.session_state.username = ""
-        st.experimental_rerun()

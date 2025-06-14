@@ -1,3 +1,6 @@
+streamlit
+gspread
+oauth2client
 streamlit run app.py
 pip install streamlit pillow
 

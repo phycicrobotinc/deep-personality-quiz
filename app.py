@@ -1,3 +1,5 @@
+pip uninstall streamlit
+pip install streamlit
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io

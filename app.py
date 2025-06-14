@@ -1,3 +1,4 @@
+st.write("Loaded correctly")  # Add at the top
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io

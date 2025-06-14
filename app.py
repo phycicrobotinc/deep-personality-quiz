@@ -59,7 +59,7 @@ options = {
     20: {"A": "Success", "B": "Happiness", "C": "Growth", "D": "Peace"}
 }
 
-# ---------------------- ANALYZE PERSONALITY ----------------------
+# ---------------------- ANALYSIS ----------------------
 def analyze_personality(answers):
     red_count = sum(1 for q in answers if answers[q] == "R")
     black_count = sum(1 for q in answers if answers[q] == "B")
@@ -90,5 +90,33 @@ def analyze_personality(answers):
     else:
         personality = "Observer"
 
-    description = f"You are a {personality}! This means you're {', '.join(traits)}."
-    return personality, description
+    return personality, f"You are a {personality}! This means you're {', '.join(traits)}."
+
+# ---------------------- CERTIFICATE GENERATOR ----------------------
+def generate_certificate(name, personality):
+    cert = Image.new("RGB", (800, 600), color="#fff2d5")
+    draw = ImageDraw.Draw(cert)
+
+    title_font = ImageFont.truetype("arial.ttf", 40)
+    name_font = ImageFont.truetype("arial.ttf", 32)
+    desc_font = ImageFont.truetype("arial.ttf", 24)
+
+    draw.text((200, 80), "Certificate of Personality", font=title_font, fill="#4B0082")
+    draw.text((150, 180), f"Awarded to: {name}", font=name_font, fill="#000000")
+    draw.text((150, 260), f"Personality Type: {personality}", font=desc_font, fill="#333333")
+    draw.text((150, 320), "Thank you for completing the Deep Personality Quiz!", font=desc_font, fill="#555555")
+
+    byte_io = io.BytesIO()
+    cert.save(byte_io, format='PNG')
+    byte_io.seek(0)
+    return byte_io
+
+# ---------------------- RESET FUNCTION ----------------------
+def reset_quiz():
+    st.session_state.submitted = False
+    st.session_state.answers = {}
+    st.session_state.username = ""
+    st.session_state.reset_requested = True
+
+# ---------------------- STREAMLIT APP ----------------------
+st.title("🧠 Deep Personalit
